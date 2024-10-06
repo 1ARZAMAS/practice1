@@ -1,5 +1,36 @@
-#include "header.h"
-#include "node.h"
+struct Node {
+    std::string data;
+    Node* next;
+    Node* prev;
+
+    Node(const std::string& value, Node* nextNode = nullptr, Node* prevNode = nullptr)
+        : data(value), next(nextNode), prev(prevNode) {
+    }
+};
+
+const int SIZE = 500;
+
+struct HashTableItem {
+    std::string key;
+    std::string data;
+    HashTableItem* next; // Указатель на следующий элемент в цепочке
+};
+
+struct HashTable {
+    HashTableItem* items[SIZE];
+    int count;
+
+    HashTable() : count(0) {//заполнение таблицы
+        for (int i = 0; i < SIZE; i++) { // все элементы nullptr
+            items[i] = nullptr;
+        }
+    }
+    int HashFun(const std::string& key);
+    HashTableItem* createItem(const std::string& key, std::string data);
+    void push(const std::string& key, std::string data);
+    void get(const std::string& key);
+    void pop(const std::string& key);
+};
 
 int HashTable::HashFun(const std::string& key) {//хэш функция
     const int prime = 43; // простое число

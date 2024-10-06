@@ -7,38 +7,37 @@
 #include <chrono>
 #include <ctime> //для времени
 
-void CreateDir(const std::string& dirName) {
-    int status = mkdir(dirName.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    if (status != 0) {
-        std::cerr << "Error creating directory: " << dirName << std::endl;
+void createDirectoriesAndFiles() {
+    if (!fs::exists(schemaName)) {
+        fs::create_directory(schemaName);
     }
-}
 
-void CreateFile(const std::string& path, const std::string& filename, const std::string& content, bool append) {
-    std::string fullPath = path + "/" + filename;
-    std::ifstream file(fullPath);
-    if (file.good()) {
-        // Файл уже существует
-        if (append) {
-            // Добавляем содержимое к существующему файлу
-            std::ofstream outFile(fullPath, std::ios_base::app);
-            outFile << content;
-            outFile.close();
-        } else {
-            // Перезаписываем существующий файл
-            std::ofstream outFile(fullPath, std::ios_base::trunc);
-            outFile << content;
-            outFile.close();
+    for (const auto& table : tables) {
+        std::string tableDir = schemaName + "/" + table;
+        if (!fs::exists(tableDir)) {
+            fs::create_directory(tableDir);
         }
-    } else {
-        // Файл не существует, создаем его
-        std::ofstream outFile(fullPath);
-        outFile << content;
-        outFile.close();
+
+        createCSVFile(tableDir, table);
+        createPKSequenceFile(tableDir, table);
+        createLockFile(tableDir, table);
     }
 }
 
-void lock_table(const std::string& table_name, const std::string& lock_file_path, int timeout_seconds) {
+void createCSVFile(const std::string& tableDir, const std::string& tableName) {
+    std::string csvFilePath = tableDir + "/1.csv";
+    std::cout << "Attempting to create CSV file at: " << csvFilePath << std::endl; // Вывод пути
+    std::ofstream csvFile(csvFilePath);
+    if (!csvFile.is_open()) {
+        throw std::runtime_error("Could not create CSV file at " + csvFilePath);
+    }
+
+    csvFile << tableName << "_pk,"; // Первая колонка для первичного ключа
+    csvFile << "column1,column2\n"; // Пример заголовков
+    csvFile.close();
+}
+
+void lock_table(const std::string& table_name, const std::string& lock_file_path, int timeout_seconds) { // нельзя использовать, если уже кто-то использует json
     std::ofstream lock_file(lock_file_path);
     if (!lock_file.is_open()) {
         throw std::runtime_error("Failed to open lock file: " + lock_file_path);

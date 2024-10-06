@@ -1,29 +1,50 @@
 // Парсит и выполняет SQL-запросы
 void QueryManager(const string& qr, const string& fileDirectory, const string& schemaName, const int tuplesLimit, const HashMap<string,DynamicArray<string>*>&JSONSchema) {  
     if (qr.find("SELECT") != -1) {
-        qr.substr(12);
-        try {
-            parseSelect(*qr, fileDirectory, schemaName, JSONSchema);
-        } catch (const exception& ErrorInfo) {
-            cerr << Errorinfo.what () << endl;
+        int index = qr.find("FROM") - 1;
+        str::string columns = qr.substr(7, index - 7);
+        int index2 = qr.find("WHERE");
+        if ( index2 != -1){
+            str::string tables = qr.substr(index, index2 - 1);
+            str::string filter = qr.substr(index2 + 6);
+        } else {
+            str::string tables = qr.substr(index);
         }
+        
     }
-    else if (qr-›data[0] == "INSERT" && qr-›data[1] == "INTO") {
-        try{
-            parsingInsert(*qr, fileDirectory, schemaName, tuplesLimit, JSONSchema);
-        } catch (const exception& ErrorInfo) {
-            cerr << ErrorInfo.what () << endl;
-        }
-
-    }  
-    else if (qr-›data[0] == "DELETE" && qr-›data[1] == "FROM") {
-        try {
-            parsingDelete(*qr, fileDirectory, schemaName, JSONSchema);
-        } catch (const exception& ErrorInfo) {
-            cerr << ErrorInfo.what () << endl;
-        }
-
-    } else {
+    // else if (qr.find("INSERT") != -1) {
+    //     int index = qr.find("INTO") - 1;
+    //     str::string tables = qr.substr(7, index - 7);
+    //     int index2 = qr.find("VALUES");
+    //     if ( index2 != -1){
+    //         str::string tables = qr.substr(index, index2 - 1);
+    //         str::string filter = qr.substr(index2 + 6);
+    //     } else {
+    //         str::string tables = qr.substr(index);
+    //     }
+    //     try{
+    //         parsingInsert(*qr, fileDirectory, schemaName, tuplesLimit, JSONSchema);
+    //     } catch (const exception& ErrorInfo) {
+    //         cerr << ErrorInfo.what () << endl;
+    //     }
+    // }  
+    // else if (qr.find("DELETE") != -1) {
+    //     int index = qr.find("FROM") - 1;
+    //     str::string columns = qr.substr(7, index - 7);
+    //     int index2 = qr.find("WHERE");
+    //     if ( index2 != -1){
+    //         str::string tables = qr.substr(index, index2 - 1);
+    //         str::string filter = qr.substr(index2 + 6);
+    //     } else {
+    //         str::string tables = qr.substr(index);
+    //     }
+    //     try {
+    //         parsingDelete(*qr, fileDirectory, schemaName, JSONSchema);
+    //     } catch (const exception& ErrorInfo) {
+    //         cerr << ErrorInfo.what () << endl;
+    //     }
+    //} 
+    else {
         cout << "Invalid SQL query" << endl;
     }
 } 
@@ -38,14 +59,12 @@ void QueryManager(const string& qr, const string& fileDirectory, const string& s
 //             throw std::invalid_argument("Unsupported query.");
 //         }
 //     }
+
 void parseSelect(HashTable::*qr, fs::fileDirectory, std::string schemaName, cshema){
 
 }
 
-void parsingInsert(){
-
-}
-
-void parsingDelete(){
-
-}
+// void parsingInsert(){
+// }
+// void parsingDelete(){
+// }

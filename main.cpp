@@ -7,32 +7,6 @@
 #include <filesystem>
 #include "json.hpp" // Библиотека для работы с JSON
 
-void writeToFile(const std::string& filename, const std::string& text) {
-    std::ofstream file(filename);
-    if (file.is_open()) {
-        file << text;
-        file.close();
-    } else {
-        throw std::logic_error("Невозможно записать данные в файл: " + filename);
-    }
-}
-
-std::string readFromFile(const std::string& filename) {
-    std::ifstream file(filename);
-    std::string content;
-    if (file.is_open()) {
-        std::string line;
-        while (getline(file, line)) {
-            content += line + "\n";
-        }
-        file.close();
-        return content;
-    } else {
-        throw std::logic_error("Невозможно прочитать файл: " + filename);
-    }
-}
-
-
 void createDirectory(const std::string& dirPath) {
     std::filesystem::create_directories(dirPath);
 }
