@@ -1,3 +1,15 @@
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <stdexcept>
+#include <ostream>
+#include <filesystem>
+#include "json.hpp"
+#include "header.h"
+
+namespace fs = std::filesystem;
+using json = nlohmann::json;
+
 struct DatabaseManager {
     std::string schemaName;
     int tuplesLimit;

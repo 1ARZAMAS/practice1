@@ -1,27 +1,8 @@
-struct Node {
-    std::string data;
-    Node* next;
-    Node* prev;
+#include <string>
+#include <iostream>
+#include "header.h"
 
-    Node(const std::string& value, Node* nextNode = nullptr, Node* prevNode = nullptr)
-        : data(value), next(nextNode), prev(prevNode) {
-    }
-};
-
-struct LinkedList{
-    Node* head;
-    Node* tail;
-
-    LinkedList() : head(nullptr), tail(nullptr) {}
-
-    void addToTheHead(std::string value); // добавление элемента в голову
-    void addToTheEnd(std::string value); // добавление элемента в хвост
-    void removeFromTheHead(); // удаление элемента с головы
-    void removeFromTheEnd(); // удаление элемента с хвоста
-    void removeByValue(std::string value); // удаление элемента по значению
-    void searchByValue(std::string value); // поиск элемента по значению
-    void display();
-};
+using namespace std;
 
 void LinkedList::addToTheHead(std::string value){ // Добавление в самое начало
     Node* newNode = new Node(value);

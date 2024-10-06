@@ -1,3 +1,10 @@
+#include <string>
+#include <cstddef>
+#include <iostream>
+#include "header.h"
+
+using namespace std;
+
 struct Node {
     std::string data;
     Node* next;

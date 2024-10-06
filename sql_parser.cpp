@@ -1,3 +1,11 @@
+#include <iostream>
+#include <fstream>
+#include <cstddef>
+#include <string>
+#include "header.h"
+
+using namespace std;
+
 void QueryManager(const std::string& SQLquery, const std::string& fileDirectory, const std::string& schemaName, HashTable& JSONSchema) {
     LinkedList wordsFromQuery;
     std::string space = " ";
@@ -16,19 +24,22 @@ void QueryManager(const std::string& SQLquery, const std::string& fileDirectory,
     // проверка первого слова
     if (wordsFromQuery.head->data == "SELECT" && wordsFromQuery.head->next->data == "FROM") {
         try {
-            ParseSelect(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
+            cout << "SELECT WORKED!" << endl;
+            //ParseSelect(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
         } catch (const std::exception& ErrorInfo) {
             std::cerr << ErrorInfo.what() << std::endl;
         }
     } else if (wordsFromQuery.head->data == "INSERT" && wordsFromQuery.head->next->data == "INTO") {
         try {
-            ParsingInsert(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
+            cout << "INSERT WORKED!" << endl;
+            //ParsingInsert(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
         } catch (const std::exception& ErrorInfo) {
             std::cerr << ErrorInfo.what() << std::endl;
         }
     } else if (wordsFromQuery.head->data == "DELETE" && wordsFromQuery.head->next->data == "FROM") {
         try {
-            ParsingDelete(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
+            cout << "DELETE WORKED!" << endl;
+            //ParsingDelete(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
         } catch (const std::exception& ErrorInfo) {
             std::cerr << ErrorInfo.what() << std::endl;
         }

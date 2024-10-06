@@ -1,3 +1,8 @@
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <ostream>
+#include "header.h"
 
 void loadSchema(const std::string& filePath) {
     std::ifstream file(filePath);
