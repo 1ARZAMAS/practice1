@@ -46,5 +46,7 @@ void QueryManager(const DatabaseManager& dbManager) {
         } catch (const std::exception& ErrorInfo) {
             std::cerr << ErrorInfo.what() << std::endl;
         }
+    } else {
+        cout << "Неверная команда!" << endl;
     }
 }
