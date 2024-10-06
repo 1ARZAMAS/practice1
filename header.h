@@ -71,7 +71,7 @@ void createLockFile(const std::string& tableDir, const std::string& tableName);
 
 void loadSchema(const std::string& filePath);
 
-void QueryManager(const std::string& SQLquery, const std::string& fileDirectory, const std::string& schemaName, HashTable& JSONSchema);
+void QueryManager(const DatabaseManager& dbManager);
 
 void loadSchema(DatabaseManager& dbManager, const std::string& configPath);
 

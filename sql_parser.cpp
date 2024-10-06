@@ -6,7 +6,10 @@
 
 using namespace std;
 
-void QueryManager(const std::string& SQLquery, const std::string& fileDirectory, const std::string& schemaName, HashTable& JSONSchema) {
+void QueryManager(const DatabaseManager& dbManager) {
+    cout << "< ";
+    std::string SQLquery;
+    getline(cin, SQLquery);
     LinkedList wordsFromQuery;
     std::string space = " ";
     size_t start = 0;

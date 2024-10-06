@@ -46,7 +46,7 @@ void HashTable::push(const std::string& key, std::string data) {
 
 void HashTable::get(const std::string& value) {
     if (count == 0) { // Проверка на пустоту
-        cout << "Table is empty" << endl;
+        cout << "Таблица пуста" << endl;
         return;
     }
 

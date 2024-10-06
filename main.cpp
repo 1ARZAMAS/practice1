@@ -8,16 +8,18 @@ using json = nlohmann::json;
 
 using namespace std;
 
-
 int main() {
+    system("chcp 65001");
     loadSchema("schema.json"); // Парсим содержимое json файла
     DatabaseManager dbManager;
     try {
         loadSchema(dbManager, "schema.json");
         createDirectoriesAndFiles(dbManager);
-        std::cout << "Schema and files created successfully." << std::endl;
+        std::cout << "Файлы успешно были созданы." << std::endl;
+        QueryManager(dbManager);
+
     } catch (const std::exception& ex) {
-        std::cerr << "Error: " << ex.what() << std::endl;
+        std::cerr << "Ошибка: " << ex.what() << std::endl;
     }
     return 0;
 }

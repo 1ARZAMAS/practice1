@@ -13,7 +13,7 @@ using json = nlohmann::json;
 void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     std::ifstream file(configPath);
     if (!file.is_open()) {
-        throw std::runtime_error("Could not open schema file.");
+        throw std::runtime_error("Ошибка открытия schema.json файла");
     }
 
     json schema;
@@ -55,19 +55,19 @@ void createCSVFile(const std::string& tableDir, const std::string& tableName) {
     // Создание начального CSV файла
     std::ofstream csvFile(csvPath);
     if (!csvFile.is_open()) {
-        std::cerr << "Could not create CSV file at " << fs::absolute(csvPath) << std::endl;
+        std::cerr << "Ошибка создания CSV файла в " << fs::absolute(csvPath) << std::endl;
         return;
     }
 
     // Запись заголовков
-    csvFile << tableName << "_pk,column1,column2,column3,column4\n";
+    csvFile << tableName << "_pk,колонка1,колонка2,колонка3,колонка4\n";
     csvFile.close();
 }
 
 void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableName) {
     std::ofstream pkFile(fs::path(tableDir) / (tableName + "_pk_sequence.txt"));
     if (!pkFile.is_open()) {
-        std::cerr << "Could not create primary key file for " << tableName << std::endl;
+        std::cerr << "Невозможно создать первичный ключ для " << tableName << std::endl;
         return;
     }
 
@@ -78,10 +78,10 @@ void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableN
 void createLockFile(const std::string& tableDir, const std::string& tableName) {
     std::ofstream lockFile(fs::path(tableDir) / (tableName + "_lock.txt"));
     if (!lockFile.is_open()) {
-        std::cerr << "Could not create lock file for " << tableName << std::endl;
+        std::cerr << "Невозможно создать замок для " << tableName << std::endl;
         return;
     }
 
-    lockFile << "unlocked"; // Статус блокировки
+    lockFile << "Не заблокировано"; // Статус блокировки
     lockFile.close();
 }
