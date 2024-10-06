@@ -10,12 +10,6 @@
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
-struct DatabaseManager {
-    std::string schemaName;
-    int tuplesLimit;
-    LinkedList tables;
-};
-
 void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     std::ifstream file(configPath);
     if (!file.is_open()) {
