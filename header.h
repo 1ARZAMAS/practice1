@@ -28,12 +28,6 @@ struct LinkedList{
     void display();
 };
 
-struct DatabaseManager {
-    std::string schemaName;
-    int tuplesLimit;
-    LinkedList tables;
-};
-
 const int SIZE = 500;
 
 struct HashTableItem {
@@ -55,28 +49,27 @@ struct HashTable {
     int HashFun(const std::string& key);
     HashTableItem* createItem(const std::string& key, std::string data);
     void push(const std::string& key, std::string data);
-    void get(const std::string& key);
+    HashTableItem* get(const std::string& key) const;
     void pop(const std::string& key);
+};
+
+struct DatabaseManager {
+    std::string schemaName;
+    int tuplesLimit;
+    LinkedList tables;
+    HashTable hashTable;  // Хеш-таблица для хранения таблиц и колонок
 };
 
 void loadSchema(DatabaseManager& dbManager, const std::string& configPath);
 
-void createCSVFile(const std::string& tableDir, const std::string& tableName);
+void createCSVFile(const std::string& tableDir, const std::string& tableName, const DatabaseManager& dbManager);
 
 void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableName);
 
 void createLockFile(const std::string& tableDir, const std::string& tableName);
 
-void loadSchema(const std::string& filePath);
+//void loadSchema(const std::string& filePath);
 
 void QueryManager(const DatabaseManager& dbManager);
 
-void loadSchema(DatabaseManager& dbManager, const std::string& configPath);
-
 void createDirectoriesAndFiles(const DatabaseManager& dbManager);
-
-void createCSVFile(const std::string& tableDir, const std::string& tableName);
-
-void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableName);
-
-void createLockFile(const std::string& tableDir, const std::string& tableName);

@@ -10,9 +10,9 @@ using namespace std;
 
 int main() {
     system("chcp 65001");
-    loadSchema("schema.json"); // Парсим содержимое json файла
     DatabaseManager dbManager;
     try {
+        
         loadSchema(dbManager, "schema.json");
         createDirectoriesAndFiles(dbManager);
         std::cout << "Файлы успешно были созданы." << std::endl;

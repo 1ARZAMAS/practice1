@@ -44,26 +44,17 @@ void HashTable::push(const std::string& key, std::string data) {
     }
 }
 
-void HashTable::get(const std::string& value) {
-    if (count == 0) { // Проверка на пустоту
-        cout << "Таблица пуста" << endl;
-        return;
-    }
-
-    for (int i = 0; i < SIZE; i++) {
-        HashTableItem* current = items[i];
-        while (current != nullptr) {
-            if (current->data == value) {
-                cout << "Найдено значение: " << current->data << " по ключу: " << current->key << endl; // Если нужно вывести ключ
-                return; // Если найдено, выходим из функции
-            }
-            current = current->next;
+HashTableItem* HashTable::get(const std::string& key) const {
+    int index = HashFun(key);
+    HashTableItem* current = items[index];
+    while (current != nullptr) {
+        if (current->key == key) {
+            return current; // Возвращаем элемент, если ключ найден
         }
+        current = current->next; // Переходим к следующему элементу
     }
-
-    cout << "Значение не найдено" << endl; // Если значение не найдено
+    return nullptr; // Если ключ не найден, возвращаем nullptr
 }
-
 
 void HashTable::pop(const std::string& key) { // Функция удаления
 

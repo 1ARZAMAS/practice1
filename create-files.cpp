@@ -22,7 +22,17 @@ void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     dbManager.tuplesLimit = schema["tuples_limit"];
 
     for (const auto& table : schema["structure"].items()) {
-        dbManager.tables.addToTheEnd(table.key());
+        const std::string tableName = table.key();
+        const auto& columns = table.value();
+        LinkedList columnList; // Создаем новый список для колонок
+        
+        for (const auto& column : columns) {
+            dbManager.hashTable.push(tableName, column.get<std::string>()); 
+            //columnList.addToTheEnd(column.get<std::string>()); // Добавляем колонки в список
+        }
+
+        // Здесь добавляем таблицу и её колонки в хеш-таблицу
+        
     }
 }
 
@@ -40,7 +50,7 @@ void createDirectoriesAndFiles(const DatabaseManager& dbManager) {
             fs::create_directory(tableDir);
         }
 
-        createCSVFile(tableDir, table);
+        createCSVFile(tableDir, table, dbManager);
         createPrimaryKeyFile(tableDir, table);
         createLockFile(tableDir, table);
         
@@ -48,7 +58,7 @@ void createDirectoriesAndFiles(const DatabaseManager& dbManager) {
     }
 }
 
-void createCSVFile(const std::string& tableDir, const std::string& tableName) {
+void createCSVFile(const std::string& tableDir, const std::string& tableName, const DatabaseManager& dbManager) {
     int fileIndex = 1;
     fs::path csvPath = fs::path(tableDir) / (tableName + "_" + std::to_string(fileIndex) + ".csv");
     
@@ -59,9 +69,29 @@ void createCSVFile(const std::string& tableDir, const std::string& tableName) {
         return;
     }
 
+    // Получение колонок из хеш-таблицы
+    HashTableItem* item = dbManager.hashTable.get(tableName); // Получаем элемент таблицы по имени
+    if (item == nullptr) {
+        std::cerr << "Таблица " << tableName << " не найдена." << std::endl;
+        csvFile.close();
+        return;
+    }
+
     // Запись заголовков
-    csvFile << tableName << "_pk,колонка1,колонка2,колонка3,колонка4\n";
-    csvFile.close();
+    csvFile << tableName << "_pk"; // Записываем первичный ключ
+
+    // Запись колонок
+    LinkedList& columns = item->columns; // Получаем список колонок
+    Node* currentColumn = columns.head; // Начинаем с головы списка
+    //dbManager.hashTable.get(tableName, column.get<std::string>()); 
+
+    while (currentColumn != nullptr) {
+        csvFile << "," << currentColumn->data; // Записываем имя колонки
+        currentColumn = currentColumn->next; // Переходим к следующему элементу
+    }
+
+    csvFile << "\n"; // Переход на новую строку
+    csvFile.close(); // Закрываем файл
 }
 
 void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableName) {
