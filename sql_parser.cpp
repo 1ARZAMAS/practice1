@@ -27,7 +27,7 @@ void QueryManager(const DatabaseManager& dbManager) {
     // проверка первого слова
     if (wordsFromQuery.head->data == "SELECT" && wordsFromQuery.head->next->data == "FROM") {
         try {
-            std::cout << "SELECT WORKED!" << std::endl;
+            cout << "SELECT WORKED!" << endl;
             //ParseSelect(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
         } catch (const std::exception& ErrorInfo) {
             std::cerr << ErrorInfo.what() << std::endl;
@@ -46,9 +46,7 @@ void QueryManager(const DatabaseManager& dbManager) {
         } catch (const std::exception& ErrorInfo) {
             std::cerr << ErrorInfo.what() << std::endl;
         }
-    } else if (wordsFromQuery.head->data == "exit"){
-        std::cout << "tschuss" << std::endl;
     } else {
-        std::cout << "Неверная команда!" << std::endl;
+        cout << "Неверная команда!" << endl;
     }
 }

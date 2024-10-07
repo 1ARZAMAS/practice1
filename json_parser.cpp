@@ -4,7 +4,7 @@
 #include <ostream>
 #include "header.h"
 
-void loadSchema(DatabaseManager& dbManager, const std::string& filePath, HashTable& schemaHashTable) {
+void loadSchema(const std::string& filePath) {
     std::ifstream file(filePath);
     
     if (!file.is_open()) {
@@ -20,6 +20,7 @@ void loadSchema(DatabaseManager& dbManager, const std::string& filePath, HashTab
     int tuples_limit = schema["tuples_limit"];
 
     // Извлечение структуры
+    HashTable schemaHashTable;
     for (auto& [tableName, columns] : schema["structure"].items()) {
         std::string columnList;
         for (const auto& column : columns) {
