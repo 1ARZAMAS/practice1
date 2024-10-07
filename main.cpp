@@ -10,12 +10,19 @@ using namespace std;
 
 int main() {
     system("chcp 65001");
-    loadSchema("schema.json"); // Парсим содержимое json файла
-    DatabaseManager dbManager;
+    
+    DatabaseManager dbManager; // Создание экземпляра DatabaseManager
+    HashTable schemaHashTable; // Создание экземпляра HashTable
+
     try {
-        loadSchema(dbManager, "schema.json");
-        createDirectoriesAndFiles(dbManager);
+        // Передаем dbManager и schemaHashTable в функцию loadSchema
+        cout << "test1"<< endl;
+        loadSchema(dbManager, "schema.json", schemaHashTable); 
+        cout << "test2"<< endl;
+        createDirectoriesAndFiles(dbManager, schemaHashTable);
+        cout << "test3"<< endl;
         std::cout << "Файлы успешно были созданы." << std::endl;
+
         QueryManager(dbManager);
 
     } catch (const std::exception& ex) {

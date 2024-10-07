@@ -5,7 +5,7 @@
 
 using namespace std;
 
-int HashTable::HashFun(const std::string& key) {//хэш функция
+int HashTable::HashFun(const std::string& key) const{//хэш функция
     const int prime = 43; // простое число
     int hash = 0;
     for (char letter : key) {
@@ -18,7 +18,7 @@ HashTableItem* HashTable::createItem(const std::string& key, std::string data) {
     return new HashTableItem{ key, data, NULL };
 }
 
-void HashTable::push(const std::string& key, std::string data) {
+void HashTable::push(const std::string& key, std::string data){
     if (count >= SIZE) {
         cout << "Table is full" << endl;
         return;
@@ -44,24 +44,41 @@ void HashTable::push(const std::string& key, std::string data) {
     }
 }
 
-void HashTable::get(const std::string& value) {
+// void HashTable::get(const std::string& value) const {
+//     if (count == 0) { // Проверка на пустоту
+//         cout << "Таблица пуста" << endl;
+//         return;
+//     }
+
+//     for (int i = 0; i < SIZE; i++) {
+//         HashTableItem* current = items[i];
+//         while (current != nullptr) {
+//             if (current->data == value) {
+//                 cout << "Найдено значение: " << current->data << " по ключу: " << current->key << endl; // Если нужно вывести ключ
+//                 return; // Если найдено, выходим из функции
+//             }
+//             current = current->next;
+//         }
+//     }
+
+//     cout << "Значение не найдено" << endl; // Если значение не найдено
+// }
+
+std::string HashTable::get(const std::string& key) const {
     if (count == 0) { // Проверка на пустоту
         cout << "Таблица пуста" << endl;
-        return;
+        return "";
     }
-
-    for (int i = 0; i < SIZE; i++) {
-        HashTableItem* current = items[i];
-        while (current != nullptr) {
-            if (current->data == value) {
-                cout << "Найдено значение: " << current->data << " по ключу: " << current->key << endl; // Если нужно вывести ключ
-                return; // Если найдено, выходим из функции
-            }
-            current = current->next;
+    int index = HashFun(key);
+    HashTableItem* current = items[index];
+    
+    while (current != nullptr) {
+        if (current->key == key) {
+            return current->data; // Возвращаем данные, если ключ найден
         }
+        current = current->next;
     }
-
-    cout << "Значение не найдено" << endl; // Если значение не найдено
+    return ""; // Если ключ не найден
 }
 
 

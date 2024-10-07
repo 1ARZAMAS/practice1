@@ -52,33 +52,23 @@ struct HashTable {
             items[i] = nullptr;
         }
     }
-    int HashFun(const std::string& key);
+    int HashFun(const std::string& key) const;
     HashTableItem* createItem(const std::string& key, std::string data);
     void push(const std::string& key, std::string data);
-    void get(const std::string& key);
+    std::string get(const std::string& key) const;
     void pop(const std::string& key);
 };
 
-void loadSchema(DatabaseManager& dbManager, const std::string& configPath);
+std::string join(const json& columns);
 
-void createDirectoriesAndFiles(const DatabaseManager& dbManager);
+void loadSchema(DatabaseManager& dbManager, const std::string& configPath, HashTable& schemaHashTable);
 
-void createCSVFile(const std::string& tableDir, const std::string& tableName);
+void createDirectoriesAndFiles(const DatabaseManager& dbManager, const HashTable& schemaHashTable);
 
 void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableName);
 
-void createLockFile(const std::string& tableDir, const std::string& tableName);
+void createCSVFile(const std::string& tableDir, const std::string& tableName, const HashTable& schemaHashTable);
 
-void loadSchema(const std::string& filePath);
+void createLockFile(const std::string& tableDir, const std::string& tableName);
 
 void QueryManager(const DatabaseManager& dbManager);
-
-void loadSchema(DatabaseManager& dbManager, const std::string& configPath);
-
-void createDirectoriesAndFiles(const DatabaseManager& dbManager);
-
-void createCSVFile(const std::string& tableDir, const std::string& tableName);
-
-void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableName);
-
-void createLockFile(const std::string& tableDir, const std::string& tableName);
