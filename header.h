@@ -61,7 +61,7 @@ struct HashTable {
 
 std::string join(const json& columns);
 
-void loadSchema(DatabaseManager& dbManager, const std::string& configPath, HashTable& schemaHashTable);
+void loadSchema(DatabaseManager& dbManager, const std::string& filePath, HashTable& schemaHashTable);
 
 void createDirectoriesAndFiles(const DatabaseManager& dbManager, const HashTable& schemaHashTable);
 

@@ -21,17 +21,19 @@ std::string join(const json& columns) {
     return result;
 }
 
-void loadSchema(DatabaseManager& dbManager, const std::string& configPath, const HashTable& schemaHashTable) {
-    std::cout << "Проверка наличия файла: " << configPath << std::endl;
-    if (!fs::exists(configPath)) {
+void loadSchema(DatabaseManager& dbManager, const std::string& filePath, const HashTable& schemaHashTable) {
+    
+    std::cout << "Проверка наличия файла: " << filePath << std::endl;
+    if (!fs::exists(filePath)) {
         throw std::runtime_error("Файл schema.json не найден");
     }
 
     std::cout << "test4" << std::endl;
-    std::ifstream file(configPath);
+    std::ifstream file(filePath);
     if (!file.is_open()) {
         throw std::runtime_error("Ошибка открытия schema.json файла");
     }
+
     std::cout << "test5" << std::endl;
     json schema;
     file >> schema;
@@ -41,10 +43,10 @@ void loadSchema(DatabaseManager& dbManager, const std::string& configPath, const
     for (const auto& table : schema["structure"].items()) {
         dbManager.tables.addToTheEnd(table.key());
         std::string columns = join(table.value());
-        schemaHashTable.push(table.key(), columns); // Сохраняем колонки в хеш-таблицу
+
+        //schemaHashTable.push(table.key(), columns); // Сохраняем колонки в хеш-таблицу
     }
 }
-
 
 void createCSVFile(const std::string& tableDir, const std::string& tableName, const HashTable& schemaHashTable) {
     std::cout << "test6" << std::endl;
@@ -52,7 +54,13 @@ void createCSVFile(const std::string& tableDir, const std::string& tableName, co
     fs::path csvPath = fs::path(tableDir) / (tableName + "_" + std::to_string(fileIndex) + ".csv");
 
     std::string columns = schemaHashTable.get(tableName);
-    
+    std::cout << "Полученные колонки для " << tableName << ": " << columns << std::endl;
+
+    // Проверка на пустые колонки
+    if (columns.empty()) {
+        std::cerr << "Не удалось получить колонки для " << tableName << std::endl;
+        return; // Выход из функции, если колонки не найдены
+    }
     std::cout << "test7" << std::endl;
     // Создание начального CSV файла
     std::ofstream csvFile(csvPath);
@@ -94,9 +102,9 @@ void createLockFile(const std::string& tableDir, const std::string& tableName) {
 }
 
 void createDirectoriesAndFiles(const DatabaseManager& dbManager, const HashTable& schemaHashTable) {
-    if (!fs::exists(dbManager.schemaName)) {
+    //if (!fs::exists(dbManager.schemaName)) {
         fs::create_directory(dbManager.schemaName);
-    }
+    //}
 
     Node* current = dbManager.tables.head;
     while (current != nullptr) {
