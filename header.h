@@ -13,6 +13,32 @@ struct Node {
     }
 };
 
+
+struct Array { // done
+    Node* head; // указываем на первый узел
+    int size; //текущий размер списка
+    int capacity; // максимальная вместимость массива
+    
+    Array(size_t cap = 15) : size(0), capacity(cap) { // конструктор для создания
+        array = new string[capacity]; // выделение памяти
+    }
+
+    ~Array() {
+        delete[] array; // освобождение памяти
+    }
+
+    void resize();
+    void add(int index, std::string value);
+    void addToTheEnd(std::string value);
+    void get(int index);
+    void remove(int index);
+    void replace(int index, std::string value);
+    void length();
+    void display();
+    void loadFromFile(const std::string& filename);
+    void saveToFile(const std::string& filename);
+};
+
 struct LinkedList{
     Node* head;
     Node* tail;

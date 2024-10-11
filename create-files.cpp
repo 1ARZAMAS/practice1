@@ -27,11 +27,10 @@ void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
         LinkedList columnList; // Создаем новый список для колонок
         
         for (const auto& column : columns) {
-            dbManager.hashTable.push(tableName, column.get<std::string>()); 
+            //dbManager.hashTable.push(tableName, tableName.get<std::string>()); 
+            dbManager.hashTable.push(tableName, schema[tableName].get<std::string>()); 
             //columnList.addToTheEnd(column.get<std::string>()); // Добавляем колонки в список
         }
-
-        // Здесь добавляем таблицу и её колонки в хеш-таблицу
         
     }
 }
@@ -81,15 +80,15 @@ void createCSVFile(const std::string& tableDir, const std::string& tableName, co
     csvFile << tableName << "_pk"; // Записываем первичный ключ
 
     // Запись колонок
-    LinkedList& columns = item->columns; // Получаем список колонок
+    LinkedList columns = head->data; // Получаем список колонок
     Node* currentColumn = columns.head; // Начинаем с головы списка
-    //dbManager.hashTable.get(tableName, column.get<std::string>()); 
+    dbManager.hashTable.get(tableName); 
 
     while (currentColumn != nullptr) {
         csvFile << "," << currentColumn->data; // Записываем имя колонки
         currentColumn = currentColumn->next; // Переходим к следующему элементу
     }
-
+    
     csvFile << "\n"; // Переход на новую строку
     csvFile.close(); // Закрываем файл
 }
