@@ -12,7 +12,7 @@ int main() {
     system("chcp 65001");
     DatabaseManager dbManager;
     try {
-        Array array;
+        //Array array;
         loadSchema(dbManager, "schema.json");
         createDirectoriesAndFiles(dbManager);
         std::cout << "Файлы успешно были созданы." << std::endl;

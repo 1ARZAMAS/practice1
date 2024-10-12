@@ -4,8 +4,40 @@
 
 using namespace std;
 
-void LinkedList::addToTheHead(std::string value){ // Добавление в самое начало
-    Node* newNode = new Node(value);
+struct DBtable{
+    std::string tableName;
+    LinkedList columnName;
+    int tuples;
+};
+
+struct UniversalNode {    
+    DBtable data;
+    UniversalNode* next;
+    UniversalNode* prev;
+
+    UniversalNode(const DBtable& value, UniversalNode* nextNode = nullptr, UniversalNode* prevNode = nullptr)
+        : data(value), next(nextNode), prev(prevNode) {
+    }
+};
+
+struct UniversalLinkedList{ 
+    UniversalNode* head;
+    UniversalNode* tail;
+
+    UniversalLinkedList() : head(nullptr), tail(nullptr) {}
+
+    void addToTheHeadUni(DBtable value); // добавление элемента в голову
+    void addToTheEndUni(DBtable value); // добавление элемента в хвост
+    void removeFromTheHeadUni(); // удаление элемента с головы
+    void removeFromTheEndUni(); // удаление элемента с хвоста
+    void removeByValueUni(DBtable value); // удаление элемента по значению
+    void existByValueUni(DBtable value); // поиск элемента по значению
+    UniversalNode* searchByValueUni(DBtable value); // возвращаем ссылку на элемент по значению
+    void displayUni();
+};
+
+void UniversalLinkedList::addToTheHeadUni(DBtable value){ // Добавление в самое начало
+    UniversalNode* newNode = new UniversalNode(value);
     if (head == nullptr){
         head = tail = newNode;
     } else {
@@ -14,8 +46,8 @@ void LinkedList::addToTheHead(std::string value){ // Добавление в с�
     }
 }
 
-void LinkedList::addToTheEnd(std::string value){
-    Node* newNode = new Node(value);
+void UniversalLinkedList::addToTheEndUni(DBtable value){
+    UniversalNode* newNode = new UniversalNode(value);
     if (head == nullptr){
         head = tail = newNode;
     } else {
@@ -24,18 +56,18 @@ void LinkedList::addToTheEnd(std::string value){
     }
 }
 
-void LinkedList::removeFromTheHead(){// удаление элемента с головы
+void UniversalLinkedList::removeFromTheHeadUni(){// удаление элемента с головы
     if (head == nullptr){
         cout << "Удаление невозможно: список пустой" << endl;
         return;
     } else{
-        Node* temp = head;
+        UniversalNode* temp = head;
         head = head->next;
         delete temp;
     }
 }
 
-void LinkedList::removeFromTheEnd(){// удаление элемента с хвоста
+void UniversalLinkedList::removeFromTheEndUni(){// удаление элемента с хвоста
     if (head == nullptr){
         cout << "Удаление невозможно: список пустой" << endl;
         return;
@@ -46,7 +78,7 @@ void LinkedList::removeFromTheEnd(){// удаление элемента с хв
         tail = nullptr;
         return;
     }
-    Node* current = head;
+    UniversalNode* current = head;
     while (current->next != tail){ // текущий будет указывать на предпоследний узел
         current = current->next;
     }
@@ -56,7 +88,7 @@ void LinkedList::removeFromTheEnd(){// удаление элемента с хв
     tail = current; // конец теперь указывает на последний элемент, предпоследний узел
 }
 
-void LinkedList::removeByValue(std::string value){ // удаление элемента по значению
+void UniversalLinkedList::removeByValueUni(DBtable value){ // удаление элемента по значению
     if (head == nullptr){
         cout << "Невозможно удалить элемент: список пуст" << endl;
         return;
@@ -69,7 +101,7 @@ void LinkedList::removeByValue(std::string value){ // удаление элем�
         removeFromTheEnd();
         return;
     }
-    Node* current = head;
+    UniversalNode* current = head;
     while (current->next && current->next->data != value){ // Пока вообще можем идти по списку
     // и пока значение не будет равно нужному
         current = current->next;
@@ -78,13 +110,13 @@ void LinkedList::removeByValue(std::string value){ // удаление элем�
         cout << "Такого значения нет в списке" << endl;
         return;
     }
-    Node* temp = current->next;
+    UniversalNode* temp = current->next;
     current->next = temp->next; // Обновляем указатель на следующий элемент
     delete temp; // Удаляем узел
 }
 
-void LinkedList::existByValue(std::string value){ // поиск элемента по значению
-    Node* current = head;
+void UniversalLinkedList::existByValueUni(DBtable value){ // поиск элемента по значению
+    UniversalNode* current = head;
     while (current->next && current->data != value) {
         current = current->next;
     }
@@ -95,8 +127,8 @@ void LinkedList::existByValue(std::string value){ // поиск элемента
     }
 }
 
-Node* LinkedList::searchByValue(std::string value){
-    Node* current = head;
+UniversalNode* UniversalLinkedList::searchByValueUni(DBtable value){
+    UniversalNode* current = head;
     while (current->next && current->data != value) {
         current = current->next;
     }
@@ -108,8 +140,8 @@ Node* LinkedList::searchByValue(std::string value){
     }
 }
 
-void LinkedList::display(){
-    Node* current = head;
+void UniversalLinkedList::displayUni(){
+    UniversalNode* current = head;
     while (current != nullptr) {
         cout << current->data << " ";
         current = current->next;

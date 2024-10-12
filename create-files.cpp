@@ -9,6 +9,7 @@
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
+LinkedList columnList; // Создаем новый список для колонок
 
 void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     std::ifstream file(configPath);
@@ -24,14 +25,11 @@ void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     for (const auto& table : schema["structure"].items()) {
         const std::string tableName = table.key();
         const auto& columns = table.value();
-        LinkedList columnList; // Создаем новый список для колонок
-        
-        for (const auto& column : columns) {
-            //dbManager.hashTable.push(tableName, tableName.get<std::string>()); 
-            dbManager.hashTable.push(tableName, schema[tableName].get<std::string>()); 
-            //columnList.addToTheEnd(column.get<std::string>()); // Добавляем колонки в список
+        //std::cout << columns[0].type_name() << std::endl;
+        for (const std::string column : columns) {
+            columnList.addToTheEnd(column); // Добавляем колонки в список
+            
         }
-        
     }
 }
 
@@ -48,7 +46,6 @@ void createDirectoriesAndFiles(const DatabaseManager& dbManager) {
         if (!fs::exists(tableDir)) {
             fs::create_directory(tableDir);
         }
-
         createCSVFile(tableDir, table, dbManager);
         createPrimaryKeyFile(tableDir, table);
         createLockFile(tableDir, table);
@@ -79,15 +76,15 @@ void createCSVFile(const std::string& tableDir, const std::string& tableName, co
     // Запись заголовков
     csvFile << tableName << "_pk"; // Записываем первичный ключ
 
+    
     // Запись колонок
-    LinkedList columns = head->data; // Получаем список колонок
-    Node* currentColumn = columns.head; // Начинаем с головы списка
-    dbManager.hashTable.get(tableName); 
+    // Node* currentColumn = columnList.head; // Начинаем с головы списка
+    // dbManager.hashTable.get(tableName); 
 
-    while (currentColumn != nullptr) {
-        csvFile << "," << currentColumn->data; // Записываем имя колонки
-        currentColumn = currentColumn->next; // Переходим к следующему элементу
-    }
+    // while (currentColumn != nullptr) {
+    //     csvFile << "," << currentColumn->data; // Записываем имя колонки
+    //     currentColumn = currentColumn->next; // Переходим к следующему элементу
+    // }
     
     csvFile << "\n"; // Переход на новую строку
     csvFile.close(); // Закрываем файл

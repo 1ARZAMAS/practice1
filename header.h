@@ -1,7 +1,9 @@
 #include "json.hpp"
+#pragma once
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
+
 
 struct Node {
     std::string data;
@@ -13,33 +15,7 @@ struct Node {
     }
 };
 
-
-struct Array { // done
-    Node* head; // указываем на первый узел
-    int size; //текущий размер списка
-    int capacity; // максимальная вместимость массива
-    
-    Array(size_t cap = 15) : size(0), capacity(cap) { // конструктор для создания
-        array = new string[capacity]; // выделение памяти
-    }
-
-    ~Array() {
-        delete[] array; // освобождение памяти
-    }
-
-    void resize();
-    void add(int index, std::string value);
-    void addToTheEnd(std::string value);
-    void get(int index);
-    void remove(int index);
-    void replace(int index, std::string value);
-    void length();
-    void display();
-    void loadFromFile(const std::string& filename);
-    void saveToFile(const std::string& filename);
-};
-
-struct LinkedList{
+struct LinkedList{ 
     Node* head;
     Node* tail;
 
@@ -50,7 +26,8 @@ struct LinkedList{
     void removeFromTheHead(); // удаление элемента с головы
     void removeFromTheEnd(); // удаление элемента с хвоста
     void removeByValue(std::string value); // удаление элемента по значению
-    void searchByValue(std::string value); // поиск элемента по значению
+    void existByValue(std::string value); // поиск элемента по значению
+    Node* searchByValue(std::string value); // возвращаем ссылку на элемент по значению
     void display();
 };
 
@@ -83,6 +60,7 @@ struct DatabaseManager {
     std::string schemaName;
     int tuplesLimit;
     LinkedList tables;
+    
     HashTable hashTable;  // Хеш-таблица для хранения таблиц и колонок
 };
 
@@ -93,8 +71,6 @@ void createCSVFile(const std::string& tableDir, const std::string& tableName, co
 void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableName);
 
 void createLockFile(const std::string& tableDir, const std::string& tableName);
-
-//void loadSchema(const std::string& filePath);
 
 void QueryManager(const DatabaseManager& dbManager);
 
