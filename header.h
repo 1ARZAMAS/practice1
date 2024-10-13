@@ -28,6 +28,7 @@ struct LinkedList{
     void existByValue(std::string value); // поиск элемента по значению
     Node* searchByValue(std::string value); // возвращаем ссылку на элемент по значению
     void display();
+    void clear();
 };
 
 const int SIZE = 500;
@@ -55,17 +56,51 @@ struct HashTable {
     void pop(const std::string& key);
 };
 
+struct DBtable{
+    std::string tableName;
+    LinkedList columnName;
+    int tuples;
+    HashTable tableValues;
+};
+
+struct UniversalNode {    
+    DBtable data;
+    UniversalNode* next;
+    UniversalNode* prev;
+
+    UniversalNode(const DBtable& value, UniversalNode* nextNode = nullptr, UniversalNode* prevNode = nullptr)
+        : data(value), next(nextNode), prev(prevNode) {
+    }
+};
+
+struct UniversalLinkedList{ 
+    UniversalNode* head;
+    UniversalNode* tail;
+
+    UniversalLinkedList() : head(nullptr), tail(nullptr) {}
+
+    void addToTheHeadUni(DBtable value); // добавление элемента в голову
+    void addToTheEndUni(DBtable value); // добавление элемента в хвост
+    void removeFromTheHeadUni(); // удаление элемента с головы
+    void removeFromTheEndUni(); // удаление элемента с хвоста
+    void removeByValueUni(DBtable value); // удаление элемента по значению
+    void existByValueUni(DBtable value); // поиск элемента по значению
+    UniversalNode* searchByValueUni(DBtable value); // возвращаем ссылку на элемент по значению
+    void displayUni();
+    
+};
+
 struct DatabaseManager {
     std::string schemaName;
     int tuplesLimit;
-    LinkedList tables;
+    UniversalLinkedList tables;
     
     HashTable hashTable;  // Хеш-таблица для хранения таблиц и колонок
 };
 
 void loadSchema(DatabaseManager& dbManager, const std::string& configPath);
 
-void createCSVFile(const std::string& tableDir, const std::string& tableName, const DatabaseManager& dbManager);
+void createCSVFile(const std::string& tableDir, DBtable& table, int tuplesLimit);
 
 void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableName);
 

@@ -116,3 +116,9 @@ void LinkedList::display(){
     }
     cout << endl;
 }
+
+void LinkedList::clear(){
+    while(head){
+        removeFromTheHead();
+    }
+}

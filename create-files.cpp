@@ -9,7 +9,13 @@
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
-LinkedList columnList; // Создаем новый список для колонок
+
+// void tableClear(DBtable& table){
+    //table.tableName = "";
+    //table.columnName.clear();
+    //table.tableValues.
+    //int tuples = 0;
+//}
 
 void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     std::ifstream file(configPath);
@@ -21,15 +27,16 @@ void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     file >> schema;
     dbManager.schemaName = schema["name"];
     dbManager.tuplesLimit = schema["tuples_limit"];
-
-    for (const auto& table : schema["structure"].items()) {
-        const std::string tableName = table.key();
-        const auto& columns = table.value();
-        //std::cout << columns[0].type_name() << std::endl;
-        for (const std::string column : columns) {
-            columnList.addToTheEnd(column); // Добавляем колонки в список
-            
+    DBtable tempTable;
+    for (const auto& table : schema["structure"].items()) {     
+        tempTable.tableName = table.key();
+        for (const std::string column :  table.value()) {
+            tempTable.columnName.addToTheEnd(column); // Добавляем колонки в список
         }
+        dbManager.tables.addToTheEndUni(tempTable);
+        // tempTable.tableName = "hjhjhjjhjhjhjhjh";
+        // tempTable.columnName.clear();
+        // tempTable.tuples = 0;
     }
 }
 
@@ -37,26 +44,26 @@ void createDirectoriesAndFiles(const DatabaseManager& dbManager) {
     if (!fs::exists(dbManager.schemaName)) {
         fs::create_directory(dbManager.schemaName);
     }
-
-    Node* current = dbManager.tables.head;
+    
+    UniversalNode* current = dbManager.tables.head;
     while (current != nullptr) {
-        std::string table = current->data;
-        std::string tableDir = dbManager.schemaName + "/" + table;
-
+        std::string tableDir = dbManager.schemaName + "/" + current->data.tableName;
         if (!fs::exists(tableDir)) {
             fs::create_directory(tableDir);
         }
-        createCSVFile(tableDir, table, dbManager);
-        createPrimaryKeyFile(tableDir, table);
-        createLockFile(tableDir, table);
+        createCSVFile(tableDir, current->data, dbManager.tuplesLimit);
+
+        createPrimaryKeyFile(tableDir, current->data.tableName);
+
+        createLockFile(tableDir, current->data.tableName);
         
         current = current->next;
     }
 }
 
-void createCSVFile(const std::string& tableDir, const std::string& tableName, const DatabaseManager& dbManager) {
+void createCSVFile(const std::string& tableDir, DBtable& table, int tuplesLimit) {
     int fileIndex = 1;
-    fs::path csvPath = fs::path(tableDir) / (tableName + "_" + std::to_string(fileIndex) + ".csv");
+    fs::path csvPath = fs::path(tableDir) / (table.tableName + "_" + std::to_string(fileIndex) + ".csv");
     
     // Создание начального CSV файла
     std::ofstream csvFile(csvPath);
@@ -65,26 +72,17 @@ void createCSVFile(const std::string& tableDir, const std::string& tableName, co
         return;
     }
 
-    // Получение колонок из хеш-таблицы
-    HashTableItem* item = dbManager.hashTable.get(tableName); // Получаем элемент таблицы по имени
-    if (item == nullptr) {
-        std::cerr << "Таблица " << tableName << " не найдена." << std::endl;
-        csvFile.close();
-        return;
-    }
-
     // Запись заголовков
-    csvFile << tableName << "_pk"; // Записываем первичный ключ
+    csvFile << table.tableName << "_pk"; // Записываем первичный ключ
 
-    
     // Запись колонок
-    // Node* currentColumn = columnList.head; // Начинаем с головы списка
-    // dbManager.hashTable.get(tableName); 
+    Node* currentColumn = table.columnName.head; // Начинаем с головы списка
+    //table..get(tableName); 
 
-    // while (currentColumn != nullptr) {
-    //     csvFile << "," << currentColumn->data; // Записываем имя колонки
-    //     currentColumn = currentColumn->next; // Переходим к следующему элементу
-    // }
+    while (currentColumn != nullptr) {
+        csvFile << "," << currentColumn->data; // Записываем имя колонки
+        currentColumn = currentColumn->next; // Переходим к следующему элементу
+    }
     
     csvFile << "\n"; // Переход на новую строку
     csvFile.close(); // Закрываем файл

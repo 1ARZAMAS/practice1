@@ -4,38 +4,6 @@
 
 using namespace std;
 
-struct DBtable{
-    std::string tableName;
-    LinkedList columnName;
-    int tuples;
-};
-
-struct UniversalNode {    
-    DBtable data;
-    UniversalNode* next;
-    UniversalNode* prev;
-
-    UniversalNode(const DBtable& value, UniversalNode* nextNode = nullptr, UniversalNode* prevNode = nullptr)
-        : data(value), next(nextNode), prev(prevNode) {
-    }
-};
-
-struct UniversalLinkedList{ 
-    UniversalNode* head;
-    UniversalNode* tail;
-
-    UniversalLinkedList() : head(nullptr), tail(nullptr) {}
-
-    void addToTheHeadUni(DBtable value); // добавление элемента в голову
-    void addToTheEndUni(DBtable value); // добавление элемента в хвост
-    void removeFromTheHeadUni(); // удаление элемента с головы
-    void removeFromTheEndUni(); // удаление элемента с хвоста
-    void removeByValueUni(DBtable value); // удаление элемента по значению
-    void existByValueUni(DBtable value); // поиск элемента по значению
-    UniversalNode* searchByValueUni(DBtable value); // возвращаем ссылку на элемент по значению
-    void displayUni();
-};
-
 void UniversalLinkedList::addToTheHeadUni(DBtable value){ // Добавление в самое начало
     UniversalNode* newNode = new UniversalNode(value);
     if (head == nullptr){
