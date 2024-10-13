@@ -10,13 +10,6 @@
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
-// void tableClear(DBtable& table){
-    //table.tableName = "";
-    //table.columnName.clear();
-    //table.tableValues.
-    //int tuples = 0;
-//}
-
 void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     std::ifstream file(configPath);
     if (!file.is_open()) {
@@ -27,16 +20,22 @@ void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     file >> schema;
     dbManager.schemaName = schema["name"];
     dbManager.tuplesLimit = schema["tuples_limit"];
-    DBtable tempTable;
-    for (const auto& table : schema["structure"].items()) {     
+
+    // Для каждой таблицы создаем новый временный объект DBtable
+    for (const auto& table : schema["structure"].items()) {
+        DBtable tempTable;  // Новый объект для каждой таблицы
         tempTable.tableName = table.key();
-        for (const std::string column :  table.value()) {
-            tempTable.columnName.addToTheEnd(column); // Добавляем колонки в список
+
+        // Очистить или инициализировать список колонок
+        tempTable.columnName.clear();  // Очистка перед добавлением колонок
+
+        // Добавляем все колонки текущей таблицы в список
+        for (const std::string& column : table.value()) {
+            tempTable.columnName.addToTheEnd(column);  // Добавляем колонку в список
         }
+
+        // Добавляем таблицу в менеджер
         dbManager.tables.addToTheEndUni(tempTable);
-        // tempTable.tableName = "hjhjhjjhjhjhjhjh";
-        // tempTable.columnName.clear();
-        // tempTable.tuples = 0;
     }
 }
 
@@ -65,20 +64,16 @@ void createCSVFile(const std::string& tableDir, DBtable& table, int tuplesLimit)
     int fileIndex = 1;
     fs::path csvPath = fs::path(tableDir) / (table.tableName + "_" + std::to_string(fileIndex) + ".csv");
     
-    // Создание начального CSV файла
-    std::ofstream csvFile(csvPath);
+    std::ofstream csvFile(csvPath);// Создание начального CSV файла
     if (!csvFile.is_open()) {
         std::cerr << "Ошибка создания CSV файла в " << fs::absolute(csvPath) << std::endl;
         return;
     }
 
-    // Запись заголовков
     csvFile << table.tableName << "_pk"; // Записываем первичный ключ
 
     // Запись колонок
-    Node* currentColumn = table.columnName.head; // Начинаем с головы списка
-    //table..get(tableName); 
-
+    Node* currentColumn = table.columnName.head; // Начинаем с головы списка 
     while (currentColumn != nullptr) {
         csvFile << "," << currentColumn->data; // Записываем имя колонки
         currentColumn = currentColumn->next; // Переходим к следующему элементу
