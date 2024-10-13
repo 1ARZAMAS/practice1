@@ -4,7 +4,6 @@
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
-
 struct Node {
     std::string data;
     Node* next;

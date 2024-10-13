@@ -82,8 +82,8 @@ void UniversalLinkedList::removeFromTheEndUni(){// удаление элемен
     while (current->next != tail){ // текущий будет указывать на предпоследний узел
         current = current->next;
     }
-    current->next = nullptr; // обнуляем указатель на последний элемент
-    // те разрываем связь с последним узлом
+    current->next = nullptr; // обнуляем указатель на последний элемент те разрываем связь с последним узлом
+   
     delete tail; // удаляем последний узел
     tail = current; // конец теперь указывает на последний элемент, предпоследний узел
 }
@@ -93,17 +93,17 @@ void UniversalLinkedList::removeByValueUni(DBtable value){ // удаление �
         cout << "Невозможно удалить элемент: список пуст" << endl;
         return;
     }
-    if (value == head->data){
-        removeFromTheHead();
+    if (value.tableName == head->data.tableName){
+        removeFromTheHeadUni();
         return;
     }
-    if (value == tail->data){
-        removeFromTheEnd();
+    if (value.tableName == tail->data.tableName){
+        removeFromTheEndUni();
         return;
     }
     UniversalNode* current = head;
-    while (current->next && current->next->data != value){ // Пока вообще можем идти по списку
-    // и пока значение не будет равно нужному
+    while (current->next && current->next->data.tableName != value.tableName){ // Пока вообще можем идти по списку и пока значение не будет равно нужному
+   
         current = current->next;
     }
     if (current->next == nullptr){
@@ -117,25 +117,24 @@ void UniversalLinkedList::removeByValueUni(DBtable value){ // удаление �
 
 void UniversalLinkedList::existByValueUni(DBtable value){ // поиск элемента по значению
     UniversalNode* current = head;
-    while (current->next && current->data != value) {
+    while (current->next && current->data.tableName != value.tableName) {
         current = current->next;
     }
-    if (current->data == value){
-        cout << "Значение " << current->data << " существует в списке" << endl;
+    if (current->data.tableName == value.tableName){
+        cout << "Значение " << current->data.tableName << " существует в списке" << endl;
     } else {
-        cout << "Такого элемента " << current->data << " нет в списке" << endl;
+        cout << "Такого элемента " << current->data.tableName << " нет в списке" << endl;
     }
 }
 
 UniversalNode* UniversalLinkedList::searchByValueUni(DBtable value){
     UniversalNode* current = head;
-    while (current->next && current->data != value) {
+    while (current->next && current->data.tableName != value.tableName) {
         current = current->next;
     }
-    if (current->data == value){
+    if (current->data.tableName == value.tableName){
         return current;
     } else {
-        cout << "Такого элемента " << current->data << " нет в списке" << endl;
         return nullptr;
     }
 }
@@ -143,7 +142,7 @@ UniversalNode* UniversalLinkedList::searchByValueUni(DBtable value){
 void UniversalLinkedList::displayUni(){
     UniversalNode* current = head;
     while (current != nullptr) {
-        cout << current->data << " ";
+        cout << current->data.tableName << " ";
         current = current->next;
     }
     cout << endl;
