@@ -33,9 +33,8 @@ void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
         for (const std::string& column : table.value()) {
             tempTable.columnName.addToTheEnd(column);  // Добавляем колонку в список
         }
-
-        // Добавляем таблицу в менеджер
-        dbManager.tables.addToTheEndUni(tempTable);
+        
+        dbManager.tables.addToTheEndUni(tempTable);// добавляем таблицу в менеджер
     }
 }
 
