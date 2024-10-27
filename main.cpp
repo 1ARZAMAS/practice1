@@ -9,18 +9,16 @@ using json = nlohmann::json;
 using namespace std;
 
 int main() {
-    system("chcp 65001");
     DatabaseManager dbManager;
     DBtable dbTableManager;
     try {
-        //Array array;
         loadSchema(dbManager, "schema.json");
         createDirectoriesAndFiles(dbManager);
-        std::cout << "Файлы успешно были созданы." << std::endl;
+        std::cout << "Files were successfuly created" << std::endl;
         QueryManager(dbManager);
 
     } catch (const std::exception& ex) {
-        std::cerr << "Ошибка: " << ex.what() << std::endl;
+        std::cerr << "Error: " << ex.what() << std::endl;
     }
     return 0;
 }

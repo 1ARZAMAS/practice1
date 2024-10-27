@@ -56,11 +56,10 @@ struct HashTable {
     void pop(const std::string& key);
 };
 
-struct DBtable{
-    std::string tableName;
-    LinkedList columnName;
+struct DBtable{ // dbTableManager для 1 таблицы
+    std::string tableName; // название таблицы
+    LinkedList columnName; // название колонки
     int tuples;
-    HashTable tableValues;
 };
 
 struct UniversalNode {    
@@ -90,12 +89,10 @@ struct UniversalLinkedList{
     
 };
 
-struct DatabaseManager {
-    std::string schemaName;
-    int tuplesLimit;
-    UniversalLinkedList tables;
-    
-    HashTable hashTable;  // Хеш-таблица для хранения таблиц и колонок
+struct DatabaseManager { // dbManager для всех существующих
+    std::string schemaName; // название схемы
+    int tuplesLimit; // ограничение
+    UniversalLinkedList tables; // таблицы
 };
 
 void loadSchema(DatabaseManager& dbManager, const std::string& configPath);
