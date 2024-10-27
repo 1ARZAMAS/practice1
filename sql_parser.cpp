@@ -2,51 +2,45 @@
 #include <fstream>
 #include <cstddef>
 #include <string>
+#include <sstream>
 #include "header.h"
 
 using namespace std;
 
 void QueryManager(const DatabaseManager& dbManager) {
-    cout << "< ";
-    std::string SQLquery;
-    getline(cin, SQLquery);
-    LinkedList wordsFromQuery;
-    std::string space = " ";
-    size_t start = 0;
-    size_t end = SQLquery.find(space);
-    
-    // разделение строки на слова и добавление в связный список
-    while (end != std::string::npos) {
-        wordsFromQuery.addToTheEnd(SQLquery.substr(start, end - start));
-        start = end + space.length();
-        end = SQLquery.find(space, start);
-    }
-    wordsFromQuery.addToTheEnd(SQLquery.substr(start, end));
+    string command;
+    while(true){
+        cout << "< ";
+        getline(cin, command);
+        istringstream iss(command);
+        string wordFromQuery;
+        iss >> wordFromQuery; // первое слово в команде
+         
+        if (wordFromQuery == "exit"){
+            return;
+        } else if (wordFromQuery == "SELECT"){
+            try {
+                cout << "sel" << endl;
 
-    // теперь wordsFromQuery содержит все слова из SQL-запроса
-    // проверка первого слова
-    if (wordsFromQuery.head->data == "SELECT" && wordsFromQuery.head->next->data == "FROM") {
-        try {
-            cout << "SELECT WORKED!" << endl;
-            //ParseSelect(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
-        } catch (const std::exception& ErrorInfo) {
-            std::cerr << ErrorInfo.what() << std::endl;
+            } catch (const exception& ErrorInfo) {
+                cerr << ErrorInfo.what() << endl;
+            }
+        } else if (wordFromQuery == "DELETE"){
+            try {
+                cout << "del" << endl; 
+
+            } catch (const exception& ErrorInfo) {
+                cerr << ErrorInfo.what() << endl;
+            }
+        } else if (wordFromQuery == "INSERT"){
+            try {
+                cout << "ins" << endl;
+
+            } catch (const exception& ErrorInfo) {
+                cerr << ErrorInfo.what() << endl;
+            }
+        } else {
+            cerr << "Incorrect SQL query" << endl;
         }
-    } else if (wordsFromQuery.head->data == "INSERT" && wordsFromQuery.head->next->data == "INTO") {
-        try {
-            cout << "INSERT WORKED!" << endl;
-            //ParsingInsert(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
-        } catch (const std::exception& ErrorInfo) {
-            std::cerr << ErrorInfo.what() << std::endl;
-        }
-    } else if (wordsFromQuery.head->data == "DELETE" && wordsFromQuery.head->next->data == "FROM") {
-        try {
-            cout << "DELETE WORKED!" << endl;
-            //ParsingDelete(wordsFromQuery, fileDirectory, schemaName, JSONSchema);
-        } catch (const std::exception& ErrorInfo) {
-            std::cerr << ErrorInfo.what() << std::endl;
-        }
-    } else {
-        cout << "Неверная команда!" << endl;
     }
 }
