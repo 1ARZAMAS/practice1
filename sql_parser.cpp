@@ -56,7 +56,38 @@ void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::
     // }
 }
 
-void QueryManager(const DatabaseManager& dbManager) {
+
+#include <filesystem>
+#include <iostream>
+#include <string>
+#include "header.h"
+
+namespace fs = std::filesystem;
+
+int amountOfCSV(const DatabaseManager& dbManager, const DBtable& table) {
+    int amount = 0; // ищем количество созданных csv файлов
+    UniversalNode* current = dbManager.tables.head;
+    while (true) {
+        amount++;
+        std::string tableDir = dbManager.schemaName + "/" + current->data.tableName + "/" + current->data.tableName + "_" + std::to_string(amount) + ".csv";
+        
+        cout << tableDir << endl;
+
+        ifstream file(tableDir);
+        if (!file.is_open()) { // если файл нельзя открыть, его нет
+            break;
+        }
+        file.close();
+    }
+    return amount - 1;
+}
+
+
+void crossJoin(){
+    
+}
+
+void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
     string command;
     while(true){
         cout << "< ";
@@ -67,34 +98,37 @@ void QueryManager(const DatabaseManager& dbManager) {
          
         if (wordFromQuery == "exit"){
             return;
-        } else if (wordFromQuery == "SELECT"){
+        } else if (wordFromQuery == "SELECT" or wordFromQuery == "a"){
             try {
                 LinkedList tablesFromQuery;
                 LinkedList columnsFromQuery;
-                iss >> wordFromQuery; // таблица1.колонка1
-                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                //iss >> wordFromQuery; // таблица1.колонка1
+                //splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                //DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
+        
+                cout << amountOfCSV(dbManager, table) << endl;
 
-                iss >> wordFromQuery; // таблица2.колонка1
-                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                //iss >> wordFromQuery; // таблица2.колонка1
+                //splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
                 
 
             } catch (const exception& ErrorInfo) {
                 cerr << ErrorInfo.what() << endl;
             }
-        // } else if (wordFromQuery == "DELETE"){
-        //     try {
-        //         cout << "del" << endl; 
+        } else if (wordFromQuery == "DELETE"){
+            try {
+                cout << "del" << endl; 
 
-        //     } catch (const exception& ErrorInfo) {
-        //         cerr << ErrorInfo.what() << endl;
-        //     }
-        // } else if (wordFromQuery == "INSERT"){
-        //     try {
-        //         cout << "ins" << endl;
+            } catch (const exception& ErrorInfo) {
+                cerr << ErrorInfo.what() << endl;
+            }
+        } else if (wordFromQuery == "INSERT"){
+            try {
+                cout << "ins" << endl;
 
-        //     } catch (const exception& ErrorInfo) {
-        //         cerr << ErrorInfo.what() << endl;
-        //     }
+            } catch (const exception& ErrorInfo) {
+                cerr << ErrorInfo.what() << endl;
+            }
         } else {
             cerr << "Incorrect SQL query" << endl;
         }
