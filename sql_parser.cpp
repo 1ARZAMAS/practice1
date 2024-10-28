@@ -72,8 +72,16 @@ int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName) 
 }
 
 
-void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable){
-    
+void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable, const DatabaseManager& dbManager, const std::string& tableName){
+    for (int i = 1; i < fileCountFirstTable; i++){ // пройдемся по всем файлам первой таблицы
+        string tableDir1 = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(i + 1) + ".csv";
+        // для правильности надо обрезать будет, потому что будет работать только для первой таблицы, а не для второй
+        // либо можно попробовать не обрезать, а использовать некст значение в списке, чтобы прийти ко второму записанному (звучит хорошо)
+        
+        for (int j = 1; j < fileCountSecondTable; j++){ // пройдемся по второй таблице
+
+        }
+    }
 }
 
 void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
@@ -99,7 +107,7 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
                 splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
                 int fileCountSecondTable = amountOfCSV(dbManager, tablesFromQuery.head->data);
 
-                crossJoin(fileCountFirstTable, fileCountSecondTable);
+                crossJoin(fileCountFirstTable, fileCountSecondTable, dbManager, tablesFromQuery.head->data);
 
             } catch (const exception& ErrorInfo) {
                 cerr << ErrorInfo.what() << endl;
