@@ -6,12 +6,12 @@
 #include "header.h"
 
 using namespace std;
+namespace fs = std::filesystem;
 
-bool columnExists(const LinkedList& columnsFromQuery, const std::string& columnName) {
+bool columnExists(const LinkedList& columnsFromQuery, const std::string& columnName) { // нужно сделать
     
     return false; // Колонка не найдена
 }
-
 
 void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::string& wordFromQuery, const DatabaseManager& dbManager) {
     // Удаляем пробелы в начале и конце
@@ -28,19 +28,19 @@ void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::
         return;
     }
 
-    // Проверяем существование таблицы
-    UniversalNode* current = dbManager.tables.head;
-    bool tableExists = false;
+    // проверяем существование таблицы
+    UniversalNode* current = dbManager.tables.head; // заходим в дб менеджер, где хранятся все названия
+    bool tableExists = false; // флаг
     DBtable* currentTablePtr = nullptr;
 
     while (current != nullptr) {
-        DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
-        if (currentTable.tableName == tablesFromQuery.head->data) { // Сравниваем имя таблицы
+        DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // приведение к типу DBtable
+        if (currentTable.tableName == tablesFromQuery.head->data) { // сравниваем имя таблицы
             tableExists = true;
-            currentTablePtr = &currentTable; // Сохраняем указатель на найденную таблицу
-            break; // Таблица найдена
+            currentTablePtr = &currentTable; // сохраняем указатель на найденную таблицу
+            break; // таблица найдена, дальше идти не нужно
         }
-        current = current->next; // Переход к следующему узлу
+        current = current->next; // переходим к следующему узлу
     }
 
     if (!tableExists) {
@@ -48,15 +48,12 @@ void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::
         return;
     }
 
-    // bool columnExists = false;
     // НУЖНО ДОБАВИТЬ ПРОВЕРКУ НА СУЩЕСТВОВАНИЕ КОЛОНОК!
     // if (!columnExists) {
     //     std::cerr << "There is no such column" << std::endl;
     //     return;
     // }
 }
-
-namespace fs = std::filesystem;
 
 int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName) {
     int amount = 0; // ищем количество созданных csv файлов
@@ -65,17 +62,17 @@ int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName) 
         tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(amount + 1) + ".csv";
         
         std::ifstream file(tableDir);
-        if (!file.is_open()) { // если файл нельзя открыть, его нет
+        if (!file.is_open()) { // если файл нельзя открыть, то он не существует
             break;
         }
         amount++;
         file.close();
     }
-    return amount; // Возвращаем количество найденных файлов
+    return amount; // возвращаем количество найденных файлов
 }
 
 
-void crossJoin(){
+void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable){
     
 }
 
@@ -94,19 +91,15 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
             try {
                 LinkedList tablesFromQuery;
                 LinkedList columnsFromQuery;
+
                 iss >> wordFromQuery; // таблица1.колонка1
                 splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
-                //DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
-        
-                int fileCount = amountOfCSV(dbManager, tablesFromQuery.head->data);
-                cout << fileCount << endl;
+                int fileCountFirstTable = amountOfCSV(dbManager, tablesFromQuery.head->data);
                 iss >> wordFromQuery; // таблица2.колонка1
                 splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
-                // DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
-                fileCount = amountOfCSV(dbManager, tablesFromQuery.head->data);
-                cout << fileCount << endl;
-                // cout << amountOfCSV(dbManager, currentTable) << endl;
-                
+                int fileCountSecondTable = amountOfCSV(dbManager, tablesFromQuery.head->data);
+
+                crossJoin(fileCountFirstTable, fileCountSecondTable);
 
             } catch (const exception& ErrorInfo) {
                 cerr << ErrorInfo.what() << endl;
