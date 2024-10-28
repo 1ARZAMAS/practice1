@@ -102,14 +102,14 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
             try {
                 LinkedList tablesFromQuery;
                 LinkedList columnsFromQuery;
-                //iss >> wordFromQuery; // таблица1.колонка1
-                //splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
-                //DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
+                iss >> wordFromQuery; // таблица1.колонка1
+                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
         
                 cout << amountOfCSV(dbManager, table) << endl;
 
-                //iss >> wordFromQuery; // таблица2.колонка1
-                //splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                iss >> wordFromQuery; // таблица2.колонка1
+                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
                 
 
             } catch (const exception& ErrorInfo) {
