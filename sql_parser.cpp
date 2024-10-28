@@ -58,22 +58,20 @@ void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::
 
 namespace fs = std::filesystem;
 
-int amountOfCSV(const DatabaseManager& dbManager, const DBtable& table) {
+int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName) {
     int amount = 0; // ищем количество созданных csv файлов
-    UniversalNode* current = dbManager.tables.head;
+    std::string tableDir;
     while (true) {
-        amount++;
-        std::string tableDir = dbManager.schemaName + "/" + current->data.tableName + "/" + current->data.tableName + "_" + std::to_string(amount) + ".csv";
+        tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(amount + 1) + ".csv";
         
-        cout << tableDir << endl;
-
-        ifstream file(tableDir);
+        std::ifstream file(tableDir);
         if (!file.is_open()) { // если файл нельзя открыть, его нет
             break;
         }
+        amount++;
         file.close();
     }
-    return amount;
+    return amount; // Возвращаем количество найденных файлов
 }
 
 
@@ -92,20 +90,21 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
          
         if (wordFromQuery == "exit"){
             return;
-        } else if (wordFromQuery == "SELECT" or wordFromQuery == "a"){
+        } else if (wordFromQuery == "SELECT"){
             try {
                 LinkedList tablesFromQuery;
                 LinkedList columnsFromQuery;
                 iss >> wordFromQuery; // таблица1.колонка1
                 splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
-                DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
+                //DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
         
-                cout << amountOfCSV(dbManager, currentTable) << endl;
-
-                // iss >> wordFromQuery; // таблица2.колонка1
-                // splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                int fileCount = amountOfCSV(dbManager, tablesFromQuery.head->data);
+                cout << fileCount << endl;
+                iss >> wordFromQuery; // таблица2.колонка1
+                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
                 // DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
-        
+                fileCount = amountOfCSV(dbManager, tablesFromQuery.head->data);
+                cout << fileCount << endl;
                 // cout << amountOfCSV(dbManager, currentTable) << endl;
                 
 
