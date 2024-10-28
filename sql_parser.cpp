@@ -56,12 +56,6 @@ void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::
     // }
 }
 
-
-#include <filesystem>
-#include <iostream>
-#include <string>
-#include "header.h"
-
 namespace fs = std::filesystem;
 
 int amountOfCSV(const DatabaseManager& dbManager, const DBtable& table) {
@@ -79,7 +73,7 @@ int amountOfCSV(const DatabaseManager& dbManager, const DBtable& table) {
         }
         file.close();
     }
-    return amount - 1;
+    return amount;
 }
 
 
@@ -102,14 +96,17 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
             try {
                 LinkedList tablesFromQuery;
                 LinkedList columnsFromQuery;
-                //iss >> wordFromQuery; // таблица1.колонка1
-                //splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
-                //DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
+                iss >> wordFromQuery; // таблица1.колонка1
+                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
         
-                cout << amountOfCSV(dbManager, table) << endl;
+                cout << amountOfCSV(dbManager, currentTable) << endl;
 
-                //iss >> wordFromQuery; // таблица2.колонка1
-                //splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                // iss >> wordFromQuery; // таблица2.колонка1
+                // splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                // DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // Приведение к типу DBtable
+        
+                // cout << amountOfCSV(dbManager, currentTable) << endl;
                 
 
             } catch (const exception& ErrorInfo) {
