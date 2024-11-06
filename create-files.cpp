@@ -65,7 +65,7 @@ void createCSVFile(const std::string& tableDir, DBtable& table, int tuplesLimit)
     
     std::ofstream csvFile(csvPath);// Создание начального CSV файла
     if (!csvFile.is_open()) {
-        std::cerr << "Ошибка создания CSV файла в " << fs::absolute(csvPath) << std::endl;
+        std::cerr << "Error while making CSV file in " << fs::absolute(csvPath) << std::endl;
         return;
     }
 
@@ -85,7 +85,7 @@ void createCSVFile(const std::string& tableDir, DBtable& table, int tuplesLimit)
 void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableName) {
     std::ofstream pkFile(fs::path(tableDir) / (tableName + "_pk_sequence.txt"));
     if (!pkFile.is_open()) {
-        std::cerr << "Невозможно создать первичный ключ для " << tableName << std::endl;
+        std::cerr << "Error while making primary key for " << tableName << std::endl;
         return;
     }
 
@@ -96,10 +96,10 @@ void createPrimaryKeyFile(const std::string& tableDir, const std::string& tableN
 void createLockFile(const std::string& tableDir, const std::string& tableName) {
     std::ofstream lockFile(fs::path(tableDir) / (tableName + "_lock.txt"));
     if (!lockFile.is_open()) {
-        std::cerr << "Невозможно создать замок для " << tableName << std::endl;
+        std::cerr << "Error while making lock file for " << tableName << std::endl;
         return;
     }
 
-    lockFile << "Не заблокировано"; // Статус блокировки
+    lockFile << "unlocked"; // Статус блокировки
     lockFile.close();
 }
