@@ -2,12 +2,21 @@
 #include <fstream>
 #include <cstddef>
 #include <string>
+#include <thread>
 #include <sstream>
 #include "header.h"
 #include "rapidcsv.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
+
+// template<typename T>
+// ostream& operator<< (ostream& os, const vector <T>& roots) {
+//     for (size_t i = 0; i < roots.size(); ++i){
+//         os << roots[i] << ' ';
+//     }
+//     return os;
+// }
 
 bool columnExists(const LinkedList& columnsFromQuery, const std::string& columnName) { // нужно сделать
     
@@ -173,18 +182,18 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
         }
         number++; // в противном случае будем дальше идти по файлам
     }
-    cout << number << endl;
     string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(number) + ".csv";
-    ofstream csv(tableDir, ios::app); // ios::app чтобы добавлять в конец документа
-    if (!csv.is_open()) { 
-        cerr << "Error while opening the file" << endl;
-        return;
-    }
-
+    
     rapidcsv::Document doc(tableDir); // считываем содержимое файла
     if (doc.GetRowCount() == 0) { // если текущий файл пустой, запишем в него первую строку с колонками
         string firstTable = dbManager.schemaName + "/" + tableName + "/" + tableName + "_1.csv";
         copyFirstRow(firstTable, tableDir); // так как мы их считываем, чтобы корректно вставлять данные
+    }
+//, ios::app
+    fstream csv(tableDir); // ios::app чтобы добавлять в конец документа
+    if (!csv.is_open()) { 
+        cerr << "Error while opening the file" << endl;
+        return;
     }
     
     bool insideQuotes = false;
@@ -212,26 +221,43 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
         counter++;
         current = current->next;
     }
+    
+    string tempString;
+    csv >> tempString;
+    int tempCounter = 1;
+    cout << tempString << endl;
+    for(int i = 0; i < tempString.size(); i++){
+        if (tempString[i] == ','){
+            tempCounter++;
+        }
+    }
 
-    if (doc.GetColumnCount() < counter){ // если количество записываемых значений больше, чем колонок, вернем ошибку
+    if (tempCounter < counter){ // если количество записываемых значений больше, чем колонок, вернем ошибку
         cerr << "Error while inserting data: more values than columns" << endl;
         return;
     }
+    csv.close();
 
-    csv << currentKey << ","; // пишем первичный ключ
+    fstream csv1(tableDir, ios::app); // ios::app чтобы добавлять в конец документа
+    if (!csv1.is_open()) { 
+        cerr << "Error while opening the file" << endl;
+        return;
+    }
+
+    csv1 << currentKey << ","; // пишем первичный ключ
 
     Node* currentData = dataList.head; // пройдемся по всем значениям
     while(currentData != nullptr){ // и запишем их
-        csv << currentData->data;
+        csv1 << currentData->data;
         if (currentData->next != nullptr){ // если ссылка не на nullptr, 
-            csv << ","; // значит, не конец списка, ставим запятую
+            csv1 << ","; // значит, не конец списка, ставим запятую
         } else {
-            csv << "\n"; // в противном случае просто перейдем на новую строку
+            csv1 << "\n"; // в противном случае просто перейдем на новую строку
         }
         currentData = currentData->next;
     }
 
-    csv.close();
+    csv1.close();
 
     // обновляем ключ
     currentKey++;
