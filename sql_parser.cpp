@@ -119,6 +119,7 @@ bool isLocked(const DatabaseManager& dbManager, const std::string& tableName){
     ifstream file(fileName);
     if (!file.is_open()) {
         cerr << "Error while reading lock file" << endl;
+        return true; // костыль, но так как прочитать файл не смогли, вернем, что таблица заблокирована к редактированию
     }
     string current; // чтение текущего значения блокировки
     file >> current;
@@ -135,6 +136,7 @@ void locking(const DatabaseManager& dbManager, const std::string& tableName){
     ofstream file(fileName);
     if (!file.is_open()) {
         cerr << "Error while reading lock file" << endl;
+        return;
     }
     file << "locked";
     file.close();
@@ -146,6 +148,7 @@ void unlocking(const DatabaseManager& dbManager, const std::string& tableName){
     ofstream file(fileName);
     if (!file.is_open()) {
         cerr << "Error while reading lock file" << endl;
+        return;
     }
     file << "unlocked";
     file.close();
@@ -168,39 +171,57 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
     }
     
     string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(number) + ".csv";
-    // rapidcsv::Document doc(tableDir); // считываем содержимое файла
-    // нужно реализовать проверку на ограничение tuplesLimit, поэтому считывание содержимого пока пусть тут будет на всякий
     ofstream csv(tableDir, ios::app); // ios::app чтобы добавлять в конец документа
     if (!csv.is_open()) { 
         cerr << "Не удалось открыть файл.\n";
         return;
     }
     
-    csv << currentKey << ","; // пишем первичный ключ
-
-    string value;
     bool insideQuotes = false;
     string currentValue;
-    for (size_t i = 0; i < query.size(); i++) {
+    LinkedList dataList; // тут будут находится все значения, которые захотим записать
+    for (int i = 0; i < query.size(); i++) {
         char ch = query[i];
         // если встречаем одиночную кавычку, то меняем флаг
         if (ch == '\'') {
             insideQuotes = !insideQuotes;
             if (!insideQuotes && !currentValue.empty()) {
-                // если закрыли кавычки, сохраняем значение в csv
-                csv << currentValue;
+                // если закрыли кавычки, сохраняем значение в dataList
+                dataList.addToTheEnd(currentValue);
                 currentValue.clear();
-                if (i + 1 < query.size() && query[i + 1] != ')') {
-                    csv << ","; // если не последняя колонка, добавляем запятую
-                } else {
-                    csv << endl; // если последняя, то переносим на новую строку
-                }
             }
         } else if (insideQuotes) {
             // если внутри кавычек, собираем значение дальше
             currentValue += ch;
         }
     }
+
+    Node* current = dataList.head;
+    int counter = 1; // начнем с 1, потому что первая колонка - это ключ
+    while (current != nullptr){
+        counter++;
+        current = current->next;
+    }
+
+    rapidcsv::Document doc(tableDir); // считываем содержимое файла
+    if (doc.GetColumnCount() < counter){ // если количество записываемых значений больше, чем колонок, вернем ошибку
+        cerr << "Error while inserting data: more values than columns" << endl;
+        return;
+    }
+
+    csv << currentKey << ","; // пишем первичный ключ
+
+    Node* currentData = dataList.head; // пройдемся по всем значениям
+    while(currentData != nullptr){ // и запишем их
+        csv << currentData->data;
+        if (currentData->next != nullptr){ // если ссылка не на nullptr, 
+            csv << ","; // значит, не конец списка, ставим запятую
+        } else {
+            csv << "\n"; // в противном случае просто перейдем на новую строку
+        }
+        currentData = currentData->next;
+    }
+
     csv.close();
 
     // обновляем ключ
@@ -211,6 +232,18 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
     }
     newKeyFile << currentKey; // перезаписываем ключ
     newKeyFile.close();
+}
+
+bool tableExists(const DatabaseManager& dbManager, const std::string& tableName) {
+    UniversalNode* current = dbManager.tables.head;
+    while (current != nullptr) { // пройдемся по списку таблиц
+        DBtable& currentTable = reinterpret_cast<DBtable&>(current->data);
+        if (currentTable.tableName == tableName) { // если значение нашлось, таблица существует
+            return true;
+        }
+        current = current->next;
+    }
+    return false;
 }
 
 void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
@@ -224,7 +257,7 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
          
         if (wordFromQuery == "exit"){
             return;
-        } else if (wordFromQuery == "SELECT"){
+        } else if (wordFromQuery == "SELECT"){ // требует дальнейшей реализации
             try {
                 LinkedList tablesFromQuery;
                 LinkedList columnsFromQuery;
@@ -238,7 +271,7 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
                 cout << tablesFromQuery.head->data << endl;
 
                 crossJoin(fileCountFirstTable, fileCountSecondTable, dbManager, tablesFromQuery.head->data, columnsFromQuery);
-                // Не все реализовано, но не могу проверить из-за отсутствия INSERT
+                // Не все реализовано, проект собирается, но при этом выдает некорректные значения, + нужно доделать оставшуюся часть sql запроса
             } catch (const exception& ErrorInfo) {
                 cerr << ErrorInfo.what() << endl;
             }
@@ -251,39 +284,44 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
             }
         } else if (wordFromQuery == "INSERT"){
             try {
+                // обрабатываем запрос
                 iss >> wordFromQuery;
                 if (wordFromQuery != "INTO") {
-                    cerr << "Incorrect command" << endl;
+                    throw std::runtime_error("Incorrect command");
                 }
                 string tableName;
-                iss >> tableName; // таблица1
-                // нужна проверка на существование таблицы !!!!!!!
-            
+                iss >> tableName; // table1
+                if (!tableExists(dbManager, tableName)) {
+                    throw std::runtime_error("Table does not exist");
+                }
+                iss >> wordFromQuery;
+                if (wordFromQuery != "VALUES") {
+                    throw std::runtime_error("Incorrect command");
+                }
                 if (isLocked(dbManager, tableName)){
-                    cerr << "Table is locked" << endl;
+                    throw std::runtime_error("Table is locked");
                 }
                 locking(dbManager, tableName); // тут блокируем доступ к таблице
+
                 int currentKey;
                 string PKFile = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + "pk_sequence.txt";
                 ifstream keyFile(PKFile);
                 if (!keyFile.is_open()) {
-                    cerr << "Error while reading key file" << endl;
+                    throw std::runtime_error("Error while reading key file");
                 }
                 keyFile >> currentKey;
                 keyFile.close();
                 
                 string query;
-                iss >> wordFromQuery; // ('somedata',
-                query += wordFromQuery;
-                iss >> wordFromQuery; //  '12345')
-                query += wordFromQuery; // ('somedata','12345')
-                
-                cout << query << endl;
+                string valuesPart;
+                getline(iss, valuesPart); // считываем оставшуюся часть строки 
+                query += valuesPart;
                 insertFunc(dbManager, tableName, query, currentKey); // тут функция вставки
-                unlocking(dbManager, tableName); // а тут обратно разблокируем после произведения вставки
+
+                unlocking(dbManager, tableName); // а тут разблокируем после произведения вставки
                 
-            } catch (const exception& ErrorInfo) {
-                cerr << ErrorInfo.what() << endl;
+            } catch (const exception& error) {
+                cerr << error.what() << endl;
             }
         } else {
             cerr << "Incorrect SQL query" << endl;
