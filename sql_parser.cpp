@@ -14,10 +14,22 @@ bool columnExists(const LinkedList& columnsFromQuery, const std::string& columnN
     return false; // Колонка не найдена
 }
 
-void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::string& wordFromQuery, const DatabaseManager& dbManager) {
+bool tableExists(const DatabaseManager& dbManager, const std::string& tableName) {
+    UniversalNode* current = dbManager.tables.head;
+    while (current != nullptr) { // пройдемся по списку таблиц
+        DBtable& currentTable = reinterpret_cast<DBtable&>(current->data);
+        if (currentTable.tableName == tableName) { // если значение нашлось, таблица существует
+            return true;
+        }
+        current = current->next;
+    }
+    return false;
+}
+
+void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::string& wordFromQuery) {
     // Удаляем пробелы в начале и конце
-    wordFromQuery.erase(0, wordFromQuery.find_first_not_of(" "));
-    wordFromQuery.erase(wordFromQuery.find_last_not_of(" ") + 1);
+    //wordFromQuery.erase(0, wordFromQuery.find_first_not_of(" "));
+    //wordFromQuery.erase(wordFromQuery.find_last_not_of(" ") + 1);
 
     // Найдем позицию точки
     size_t dotPos = wordFromQuery.find('.');
@@ -28,32 +40,6 @@ void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::
         std::cout << "Incorrect format: " << wordFromQuery << std::endl;
         return;
     }
-
-    // проверяем существование таблицы
-    UniversalNode* current = dbManager.tables.head; // заходим в дб менеджер, где хранятся все названия
-    bool tableExists = false; // флаг
-    DBtable* currentTablePtr = nullptr;
-
-    while (current != nullptr) {
-        DBtable& currentTable = reinterpret_cast<DBtable&>(current->data); // приведение к типу DBtable
-        if (currentTable.tableName == tablesFromQuery.head->data) { // сравниваем имя таблицы
-            tableExists = true;
-            currentTablePtr = &currentTable; // сохраняем указатель на найденную таблицу
-            break; // таблица найдена, дальше идти не нужно
-        }
-        current = current->next; // переходим к следующему узлу
-    }
-
-    if (!tableExists) {
-        std::cerr << "There is no such table" << std::endl;
-        return;
-    }
-
-    // НУЖНО ДОБАВИТЬ ПРОВЕРКУ НА СУЩЕСТВОВАНИЕ КОЛОНОК!
-    // if (!columnExists) {
-    //     std::cerr << "There is no such column" << std::endl;
-    //     return;
-    // }
 }
 
 int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName) {
@@ -154,27 +140,51 @@ void unlocking(const DatabaseManager& dbManager, const std::string& tableName){
     file.close();
 }
 
+void copyFirstRow(string& firstTable, string& tableDir){
+    string firstRow;
+    ifstream firstFile(firstTable); // откроем первую таблицу и считаем первую строку
+    if (!firstFile.is_open()) {
+        cerr << "Error while opening file" << endl;
+        return;
+    }
+    firstFile >> firstRow;
+    firstFile.close();
+    ofstream secondFile(tableDir); // откроем вторую таблицу и запишем первую строку
+    if (!secondFile.is_open()) {
+        cerr << "Error while opening file" << endl;
+        return;
+    }
+    secondFile << firstRow << endl;
+    secondFile.close();
+}
+
 void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, string& query, int& currentKey){
     int number = 1;
-    while (true) {
+    while (true) { // для того чтобы понимать в какой именно файл нужно будет записывать данные, не заполнены ли остальные
         string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(number) + ".csv";
-        ifstream file(tableDir);
+        ofstream file(tableDir, ios::app);
         if (!file.is_open()){
             cerr << "Error while reading file at" << tableDir << endl;
             return;
         }
         rapidcsv::Document doc(tableDir); // тут с помощью сторонней библиотеки считываем количество строк
         if (doc.GetRowCount() < dbManager.tuplesLimit) { // если количество строк меньше лимита
-            break; // то другой таблицы нет, можно закончить цикл
+            break; // то останавливаем цикл, ибо будем записывать в эту таблицу
         }
         number++; // в противном случае будем дальше идти по файлам
     }
-    
+    cout << number << endl;
     string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(number) + ".csv";
     ofstream csv(tableDir, ios::app); // ios::app чтобы добавлять в конец документа
     if (!csv.is_open()) { 
-        cerr << "Не удалось открыть файл.\n";
+        cerr << "Error while opening the file" << endl;
         return;
+    }
+
+    rapidcsv::Document doc(tableDir); // считываем содержимое файла
+    if (doc.GetRowCount() == 0) { // если текущий файл пустой, запишем в него первую строку с колонками
+        string firstTable = dbManager.schemaName + "/" + tableName + "/" + tableName + "_1.csv";
+        copyFirstRow(firstTable, tableDir); // так как мы их считываем, чтобы корректно вставлять данные
     }
     
     bool insideQuotes = false;
@@ -203,7 +213,6 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
         current = current->next;
     }
 
-    rapidcsv::Document doc(tableDir); // считываем содержимое файла
     if (doc.GetColumnCount() < counter){ // если количество записываемых значений больше, чем колонок, вернем ошибку
         cerr << "Error while inserting data: more values than columns" << endl;
         return;
@@ -234,16 +243,8 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
     newKeyFile.close();
 }
 
-bool tableExists(const DatabaseManager& dbManager, const std::string& tableName) {
-    UniversalNode* current = dbManager.tables.head;
-    while (current != nullptr) { // пройдемся по списку таблиц
-        DBtable& currentTable = reinterpret_cast<DBtable&>(current->data);
-        if (currentTable.tableName == tableName) { // если значение нашлось, таблица существует
-            return true;
-        }
-        current = current->next;
-    }
-    return false;
+void deleteFunc(const DatabaseManager& dbManager, const std::string& tableName, string& query){
+
 }
 
 void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
@@ -263,10 +264,10 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
                 LinkedList columnsFromQuery;
 
                 iss >> wordFromQuery; // table1.column1 
-                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery);
                 int fileCountFirstTable = amountOfCSV(dbManager, tablesFromQuery.head->data);
                 iss >> wordFromQuery; // table2.column1
-                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery, dbManager);
+                splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery);
                 int fileCountSecondTable = amountOfCSV(dbManager, tablesFromQuery.head->data);
                 cout << tablesFromQuery.head->data << endl;
 
@@ -277,7 +278,34 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
             }
         } else if (wordFromQuery == "DELETE"){
             try {
-                cout << "del" << endl; 
+                // DELETE FROM таблица1 WHERE таблица1.колонка1 = '123'
+                // обрабатываем запрос
+                iss >> wordFromQuery;
+                if (wordFromQuery != "FROM") {
+                    throw std::runtime_error("Incorrect command");
+                }
+                string tableName;
+                iss >> tableName; // table1
+                if (!tableExists(dbManager, tableName)) {
+                    throw std::runtime_error("Table does not exist");
+                }
+                iss >> wordFromQuery;
+                if (wordFromQuery != "WHERE") {
+                    throw std::runtime_error("Incorrect command");
+                }
+
+                if (isLocked(dbManager, tableName)){
+                    throw std::runtime_error("Table is locked");
+                }
+                locking(dbManager, tableName); // тут блокируем доступ к таблице
+
+                string query;
+                string valuesPart;
+                getline(iss, valuesPart); // считываем оставшуюся часть строки (вдруг захотим удалять не по одному значению)
+                query += valuesPart;
+                deleteFunc(dbManager, tableName, query); // тут функция удаления
+
+                unlocking(dbManager, tableName); // а тут разблокируем после произведения удаления
 
             } catch (const exception& ErrorInfo) {
                 cerr << ErrorInfo.what() << endl;
