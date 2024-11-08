@@ -10,14 +10,6 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-// template<typename T>
-// ostream& operator<< (ostream& os, const vector <T>& roots) {
-//     for (size_t i = 0; i < roots.size(); ++i){
-//         os << roots[i] << ' ';
-//     }
-//     return os;
-// }
-
 bool columnExists(const LinkedList& columnsFromQuery, const std::string& columnName) { // нужно сделать
     
     return false; // Колонка не найдена
@@ -36,12 +28,7 @@ bool tableExists(const DatabaseManager& dbManager, const std::string& tableName)
 }
 
 void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::string& wordFromQuery) {
-    // Удаляем пробелы в начале и конце
-    //wordFromQuery.erase(0, wordFromQuery.find_first_not_of(" "));
-    //wordFromQuery.erase(wordFromQuery.find_last_not_of(" ") + 1);
-
-    // Найдем позицию точки
-    size_t dotPos = wordFromQuery.find('.');
+    size_t dotPos = wordFromQuery.find('.'); // найдем позицию точки
     if (dotPos != std::string::npos) {
         tablesFromQuery.addToTheHead(wordFromQuery.substr(0, dotPos)); // Сохраняем имя таблицы
         columnsFromQuery.addToTheHead(wordFromQuery.substr(dotPos + 1)); // Сохраняем имя колонки
@@ -50,6 +37,22 @@ void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::
         return;
     }
 }
+
+// Функция для удаления пробелов и запятой в конце строки
+string cleanColumnName(const string& str) {
+    string cleaned = str;
+    if (!cleaned.empty() && cleaned.back() == ',') {
+        cleaned.pop_back();  // Убираем последнюю запятую
+    }
+    // Убираем ведущие и завершающие пробелы
+    size_t start = cleaned.find_first_not_of(" \t");
+    size_t end = cleaned.find_last_not_of(" \t");
+    if (start == string::npos || end == string::npos) {
+        return "";  // Если пробелы только, возвращаем пустую строку
+    }
+    return cleaned.substr(start, end - start + 1);
+}
+
 
 int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName) {
     int amount = 0; // ищем количество созданных csv файлов
@@ -69,39 +72,42 @@ int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName) 
 
 void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable, const DatabaseManager& dbManager, const std::string& tableName, LinkedList& columnsFromQuery){
     for (int i = 0; i < fileCountFirstTable; i++){ // пройдемся по всем файлам первой таблицы
-        DBtable& firstTable = reinterpret_cast<DBtable&>(dbManager.tables.head->next->data); // приводим к типу DBtable
+        DBtable& firstTable = reinterpret_cast<DBtable&>(dbManager.tables.head->data); // приводим к типу DBtable
         string currentTable1 = firstTable.tableName; // получаем имя таблицы
 
         string tableDir1 = dbManager.schemaName + "/" + currentTable1 + "/" + currentTable1 + "_" + std::to_string(i + 1) + ".csv";
-        string column1 = columnsFromQuery.head->data;
+        string column1 = cleanColumnName(columnsFromQuery.head->next->data);
         
         rapidcsv::Document document1(tableDir1); // открываем файл 1
         int indexFirstColumn = document1.GetColumnIdx(column1); // считываем индекс искомой колонки 1
         int amountRow1 = document1.GetRowCount(); // считываем количество строк в файле 1
-        cout << "Table1 has " << amountRow1 << " rows" << endl;
         for (int j = 0; j < amountRow1; j++){ // проходимся по всем строкам
             for (int k = 0; k < fileCountSecondTable; k++){ // пройдемся по второй таблице
-                DBtable& secondTable = reinterpret_cast<DBtable&>(dbManager.tables.head->data); // приводим к типу DBtable
+                DBtable& secondTable = reinterpret_cast<DBtable&>(dbManager.tables.head->next->data); // приводим к типу DBtable
                 string currentTable2 = secondTable.tableName; // получаем имя таблицы
                 
-                string tableDir2 = dbManager.schemaName + "/" + currentTable2 + "/" + currentTable2 + "_" + std::to_string(i + 1) + ".csv";
-                string column2 = columnsFromQuery.head->next->data;
+                string tableDir2 = dbManager.schemaName + "/" + currentTable2 + "/" + currentTable2 + "_" + std::to_string(k + 1) + ".csv";
+                string column2 = cleanColumnName(columnsFromQuery.head->data);
                 rapidcsv::Document document2(tableDir2); // открываем файл 2
+
                 int indexSecondColumn = document2.GetColumnIdx(column2); // считываем индекс искомой колонки 2
                 int amountRow2 = document2.GetRowCount(); // считываем количество строк в файле 2
-                cout << "Table2 has " << amountRow2 << " rows" << endl;
                 for (int p = 0; p < amountRow2; ++p) {
-                    if (indexFirstColumn < document1.GetColumnCount()) {
-                        cout << document1.GetCell<string>(indexFirstColumn, j) << "  |   ";
-                    } else {
-                        cerr << "Column index out of bounds for first table" << endl;
-                    }
+                    // if (indexFirstColumn < document1.GetColumnCount()) {
+                    //     cout << document1.GetCell<string>(indexFirstColumn, j) << "  |   ";
+                    // } else {
+                    //     cerr << "Column index out of bounds for first table" << endl;
+                    // }
 
-                    if (indexSecondColumn < document2.GetColumnCount()) {
-                        cout << document2.GetCell<string>(indexSecondColumn, p) << endl;
-                    } else {
-                        cerr << "Column index out of bounds for second table" << endl;
-                    }
+                    // if (indexSecondColumn < document2.GetColumnCount()) {
+                    //     cout << document2.GetCell<string>(indexSecondColumn, p) << endl;
+                    // } else {
+                    //     cerr << "Column index out of bounds for second table" << endl;
+                    // }
+                    cout << document1.GetCell<string>(0, j) << ": ";
+                    cout << document1.GetCell<string>(indexFirstColumn, j) << "  |   ";
+                    cout << document2.GetCell<string>(0, p) << ": ";
+                    cout << document2.GetCell<string>(indexSecondColumn, p) << endl;
                 }
             }
         }
@@ -335,7 +341,6 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
                 iss >> wordFromQuery; // table2.column1
                 splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery);
                 int fileCountSecondTable = amountOfCSV(dbManager, tablesFromQuery.head->data);
-                cout << tablesFromQuery.head->data << endl;
 
                 crossJoin(fileCountFirstTable, fileCountSecondTable, dbManager, tablesFromQuery.head->data, columnsFromQuery);
                 // Не все реализовано, проект собирается, но при этом выдает некорректные значения, + нужно доделать оставшуюся часть sql запроса
