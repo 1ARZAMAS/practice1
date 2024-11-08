@@ -1,67 +1,10 @@
-#include <iostream>
-#include <fstream>
-#include <cstddef>
-#include <string>
-#include <thread>
-#include <sstream>
 #include "header.h"
-#include "rapidcsv.hpp"
+#include "lock.h"
+#include "functions.h"
+#include "sqlFuncs.h"
 
 using namespace std;
 namespace fs = std::filesystem;
-
-bool tableExists(const DatabaseManager& dbManager, const std::string& tableName) {
-    UniversalNode* current = dbManager.tables.head;
-    while (current != nullptr) { // пройдемся по списку таблиц
-        DBtable& currentTable = reinterpret_cast<DBtable&>(current->data);
-        if (currentTable.tableName == tableName) { // если значение нашлось, таблица существует
-            return true;
-        }
-        current = current->next;
-    }
-    return false;
-}
-
-void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::string& wordFromQuery) {
-    size_t dotPos = wordFromQuery.find('.'); // найдем позицию точки
-    if (dotPos != std::string::npos) {
-        tablesFromQuery.addToTheHead(wordFromQuery.substr(0, dotPos)); // Сохраняем имя таблицы
-        columnsFromQuery.addToTheHead(wordFromQuery.substr(dotPos + 1)); // Сохраняем имя колонки
-    } else {
-        std::cout << "Incorrect format: " << wordFromQuery << std::endl;
-        return;
-    }
-}
-
-string cleanColumnName(const string& str) {
-    string cleaned = str;
-    if (!cleaned.empty() && cleaned.back() == ',') {
-        cleaned.pop_back(); // убираем последнюю запятую
-    }
-    // убираем пробелы
-    int start = cleaned.find_first_not_of(" \t");
-    int end = cleaned.find_last_not_of(" \t");
-    if (start == string::npos || end == string::npos) {
-        return ""; // если только пробелы, вернем пустую строку
-    }
-    return cleaned.substr(start, end - start + 1);
-}
-
-int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName) {
-    int amount = 0; // ищем количество созданных csv файлов
-    std::string tableDir;
-    while (true) {
-        tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(amount + 1) + ".csv";
-        
-        std::ifstream file(tableDir);
-        if (!file.is_open()) { // если файл нельзя открыть, то он не существует
-            break;
-        }
-        amount++;
-        file.close();
-    }
-    return amount; // возвращаем количество найденных файлов
-}
 
 void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable, const DatabaseManager& dbManager, const std::string& tableName, LinkedList& columnsFromQuery){
     for (int i = 0; i < fileCountFirstTable; i++){ // пройдемся по всем файлам первой таблицы
@@ -69,7 +12,7 @@ void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable, const Databa
         string currentTable1 = firstTable.tableName; // получаем имя таблицы
 
         string tableDir1 = dbManager.schemaName + "/" + currentTable1 + "/" + currentTable1 + "_" + std::to_string(i + 1) + ".csv";
-        string column1 = cleanColumnName(columnsFromQuery.head->next->data);
+        string column1 = cleanString(columnsFromQuery.head->next->data);
         
         rapidcsv::Document document1(tableDir1); // открываем файл 1
         int indexFirstColumn = document1.GetColumnIdx(column1); // считываем индекс искомой колонки 1
@@ -80,7 +23,7 @@ void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable, const Databa
                 string currentTable2 = secondTable.tableName; // получаем имя таблицы
                 
                 string tableDir2 = dbManager.schemaName + "/" + currentTable2 + "/" + currentTable2 + "_" + std::to_string(k + 1) + ".csv";
-                string column2 = cleanColumnName(columnsFromQuery.head->data);
+                string column2 = cleanString(columnsFromQuery.head->data);
                 rapidcsv::Document document2(tableDir2); // открываем файл 2
 
                 int indexSecondColumn = document2.GetColumnIdx(column2); // считываем индекс искомой колонки 2
@@ -103,211 +46,6 @@ void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable, const Databa
                 }
             }
         }
-    }
-}
-
-bool isLocked(const DatabaseManager& dbManager, const std::string& tableName){
-    string fileName = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + "lock.txt";
-        
-    ifstream file(fileName);
-    if (!file.is_open()) {
-        cerr << "Error while reading lock file" << endl;
-        return true; // так как прочитать файл не смогли, вернем, что таблица заблокирована к редактированию
-    }
-    string current; // чтение текущего значения блокировки
-    file >> current;
-    file.close();
-    if (current == "locked") {
-        return true; // заблокирована
-    }
-    return false; // разблокирована
-}
-
-void locking(const DatabaseManager& dbManager, const std::string& tableName){
-    string fileName = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + "lock.txt"; 
-    // блокируем через обновление txt файла
-    ofstream file(fileName);
-    if (!file.is_open()) {
-        cerr << "Error while reading lock file" << endl;
-        return;
-    }
-    file << "locked";
-    file.close();
-}
-
-void unlocking(const DatabaseManager& dbManager, const std::string& tableName){
-    string fileName = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + "lock.txt";
-    // а тут разблокируем, тоже с помощью файла
-    ofstream file(fileName);
-    if (!file.is_open()) {
-        cerr << "Error while reading lock file" << endl;
-        return;
-    }
-    file << "unlocked";
-    file.close();
-}
-
-void copyFirstRow(string& firstTable, string& tableDir){
-    string firstRow;
-    ifstream firstFile(firstTable); // откроем первую таблицу и считаем первую строку
-    if (!firstFile.is_open()) {
-        cerr << "Error while opening file" << endl;
-        return;
-    }
-    firstFile >> firstRow;
-    firstFile.close();
-    ofstream secondFile(tableDir); // откроем вторую таблицу и запишем первую строку
-    if (!secondFile.is_open()) {
-        cerr << "Error while opening file" << endl;
-        return;
-    }
-    secondFile << firstRow << endl;
-    secondFile.close();
-}
-
-void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, string& query, int& currentKey){
-    int number = 1;
-    while (true) { // для того чтобы понимать в какой именно файл нужно будет записывать данные, не заполнены ли остальные
-        string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(number) + ".csv";
-        ofstream file(tableDir, ios::app);
-        if (!file.is_open()){
-            cerr << "Error while reading file at" << tableDir << endl;
-            return;
-        }
-        rapidcsv::Document doc(tableDir); // тут с помощью сторонней библиотеки считываем количество строк
-        if (doc.GetRowCount() < dbManager.tuplesLimit) { // если количество строк меньше лимита
-            break; // то останавливаем цикл, ибо будем записывать в эту таблицу
-        }
-        number++; // в противном случае будем дальше идти по файлам
-    }
-    string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(number) + ".csv";
-    
-    rapidcsv::Document doc(tableDir); // считываем содержимое файла
-    if (doc.GetRowCount() == 0) { // если текущий файл пустой, запишем в него первую строку с колонками
-        string firstTable = dbManager.schemaName + "/" + tableName + "/" + tableName + "_1.csv";
-        copyFirstRow(firstTable, tableDir); // так как мы их считываем, чтобы корректно вставлять данные
-    }
-    
-    fstream csv(tableDir); // ios::app чтобы добавлять в конец документа
-    if (!csv.is_open()) { 
-        cerr << "Error while opening the file" << endl;
-        return;
-    }
-    
-    bool insideQuotes = false;
-    string currentValue;
-    LinkedList dataList; // тут будут находится все значения, которые захотим записать
-    for (int i = 0; i < query.size(); i++) {
-        char ch = query[i];
-        // если встречаем одиночную кавычку, то меняем флаг
-        if (ch == '\'') {
-            insideQuotes = !insideQuotes;
-            if (!insideQuotes && !currentValue.empty()) {
-                // если закрыли кавычки, сохраняем значение в dataList
-                dataList.addToTheEnd(currentValue);
-                currentValue.clear();
-            }
-        } else if (insideQuotes) {
-            // если внутри кавычек, собираем значение дальше
-            currentValue += ch;
-        }
-    }
-
-    Node* current = dataList.head;
-    int counter = 1; // начнем с 1, потому что первая колонка - это ключ
-    while (current != nullptr){
-        counter++;
-        current = current->next;
-    }
-    
-    string tempString;
-    csv >> tempString;
-    int tempCounter = 1;
-    for(int i = 0; i < tempString.size(); i++){
-        if (tempString[i] == ','){
-            tempCounter++;
-        }
-    }
-
-    if (tempCounter < counter){ // если количество записываемых значений больше, чем колонок, вернем ошибку
-        cerr << "Error while inserting data: more values than columns" << endl;
-        return;
-    }
-    csv.close();
-
-    fstream csv1(tableDir, ios::app); // ios::app чтобы добавлять в конец документа
-    if (!csv1.is_open()) { 
-        cerr << "Error while opening the file" << endl;
-        return;
-    }
-
-    csv1 << currentKey << ","; // пишем первичный ключ
-
-    Node* currentData = dataList.head; // пройдемся по всем значениям
-    while(currentData != nullptr){ // и запишем их
-        csv1 << currentData->data;
-        if (currentData->next != nullptr){ // если ссылка не на nullptr, 
-            csv1 << ","; // значит, не конец списка, ставим запятую
-        } else {
-            csv1 << "\n"; // в противном случае просто перейдем на новую строку
-        }
-        currentData = currentData->next;
-    }
-
-    csv1.close();
-
-    // обновляем ключ
-    currentKey++;
-    ofstream newKeyFile(dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + "pk_sequence.txt");
-    if (!newKeyFile.is_open()){
-        cerr << "Error while updating key file" << endl;
-    }
-    newKeyFile << currentKey; // перезаписываем ключ
-    newKeyFile.close();
-}
-
-void deleteFunc(const DatabaseManager& dbManager, const std::string& tableName, string& query, LinkedList& tableFromQuery, LinkedList& columnFromQuery){
-    bool insideQuotes = false;
-    string currentValue;
-    LinkedList dataList; // тут будут находится все значения, которые захотим удалить
-    for (int i = 0; i < query.size(); i++) {
-        char ch = query[i];
-        // если встречаем одиночную кавычку, то меняем флаг
-        if (ch == '\'') {
-            insideQuotes = !insideQuotes;
-            if (!insideQuotes && !currentValue.empty()) {
-                // если закрыли кавычки, сохраняем значение в dataList
-                dataList.addToTheEnd(currentValue);
-                currentValue.clear();
-            }
-        } else if (insideQuotes) {
-            // если внутри кавычек, собираем значение дальше
-            currentValue += ch;
-        }
-    }
-
-    bool valueExists = false;
-    Node* currentData = dataList.head; // пройдемся по всем значениям
-    for(int i = 0; i < amountOfCSV(dbManager, tableName); i++){
-        string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(i + 1) + ".csv";
-        rapidcsv::Document doc(tableDir); // считываем содержимое файла
-        int amountOfRows = doc.GetRowCount();
-        while(currentData != nullptr){
-            for (int j = 0; j < amountOfRows; j++){    
-                // GetCell(колонка, строка)
-                if (doc.GetCell<string>(columnFromQuery.head->data, j) == currentData->data){
-                    valueExists = true;
-                    doc.RemoveRow(j);
-                    doc.Save(tableDir);
-                    j--;
-                    amountOfRows--;
-                }
-            }
-            currentData = currentData->next;
-        }
-    }
-    if (!valueExists){
-        cerr << "Value does not exist" << endl;
     }
 }
 
@@ -334,8 +72,59 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
                 splitPoint(tablesFromQuery, columnsFromQuery, wordFromQuery);
                 int fileCountSecondTable = amountOfCSV(dbManager, tablesFromQuery.head->data);
 
-                crossJoin(fileCountFirstTable, fileCountSecondTable, dbManager, tablesFromQuery.head->data, columnsFromQuery);
-                // Не все реализовано, проект собирается, но при этом выдает некорректные значения, + нужно доделать оставшуюся часть sql запроса
+                iss >> wordFromQuery;
+                if (wordFromQuery != "FROM") {
+                    throw std::runtime_error("Incorrect command");
+                }
+                // проверка на то, что названия таблиц из table1.column1 будут такими же как и после FROM, те table1
+                // (условно)
+                string tableName;
+                iss >> tableName;
+                string cleanTable = cleanString(tableName);
+                Node* currentTable = tablesFromQuery.head;
+                bool tableFound = false;
+                while (currentTable != nullptr){
+                    if (currentTable->data == cleanTable){
+                        tableFound = true;
+                        break;
+                    }
+                    currentTable = currentTable->next;
+                }
+                if (!tableFound){
+                    throw runtime_error("Incorrect table in query");
+                }
+                iss >> tableName;
+                cleanTable = cleanString(tableName);
+                Node* currentSecondTable = tablesFromQuery.head;
+                tableFound = false;
+                while (currentSecondTable != nullptr){
+                    if (currentSecondTable->data == cleanTable){
+                        tableFound = true;
+                        break;
+                    }
+                    currentSecondTable = currentSecondTable->next;
+                }
+                if (!tableFound){
+                    throw runtime_error("Incorrect table in query");
+                }
+
+                string nextWord;
+                iss >> nextWord;
+                bool hasWhere = false;
+                if (nextWord == "WHERE"){ // проверим, есть ли следующее слово WHERE
+                    hasWhere = true;
+                }
+
+                if (hasWhere) {
+                    string query;
+                    string valuesPart;
+                    getline(iss, valuesPart); // считываем оставшуюся часть строки
+                    query += valuesPart; // table1.column1 = table2.column2 AND table1.column2 = '123'
+                    
+                } else {
+                    crossJoin(fileCountFirstTable, fileCountSecondTable, dbManager, tablesFromQuery.head->data, columnsFromQuery);
+                }
+                
             } catch (const exception& ErrorInfo) {
                 cerr << ErrorInfo.what() << endl;
             }
