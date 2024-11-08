@@ -31,30 +31,6 @@ struct LinkedList{
     void clear();
 };
 
-const int SIZE = 500;
-
-struct HashTableItem {
-    std::string key;
-    std::string data;
-    HashTableItem* next; // Указатель на следующий элемент в цепочке
-};
-
-struct HashTable {
-    
-    HashTableItem* items[SIZE];
-    int count;
-
-    HashTable() : count(0) {//заполнение таблицы
-        for (int i = 0; i < SIZE; i++) { // все элементы nullptr
-            items[i] = nullptr;
-        }
-    }
-    int HashFun(const std::string& key);
-    HashTableItem* createItem(const std::string& key, std::string data);
-    void push(const std::string& key, std::string data);
-    void pop(const std::string& key);
-};
-
 struct DBtable{ // dbTableManager для 1 таблицы
     std::string tableName; // название таблицы
     LinkedList columnName; // название колонки
