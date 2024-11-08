@@ -21,26 +21,24 @@ void loadSchema(DatabaseManager& dbManager, const std::string& configPath) {
     dbManager.schemaName = schema["name"];
     dbManager.tuplesLimit = schema["tuples_limit"];
 
-    // Для каждой таблицы создаем новый временный объект DBtable
+    // для каждой таблицы создаем новый временный объект DBtable
     for (const auto& table : schema["structure"].items()) {
-        DBtable tempTable;  // Новый объект для каждой таблицы
+        DBtable tempTable;
         tempTable.tableName = table.key();
+        tempTable.columnName.clear(); // очищаем перед добавлением новых колонок
 
-        // Очистить или инициализировать список колонок
-        tempTable.columnName.clear();  // Очистка перед добавлением колонок
-
-        // Добавляем все колонки текущей таблицы в список
+        // добавляем все колонки текущей таблицы в список
         for (const std::string& column : table.value()) {
-            tempTable.columnName.addToTheEnd(column);  // Добавляем колонку в список
+            tempTable.columnName.addToTheEnd(column);
         }
         
-        dbManager.tables.addToTheEndUni(tempTable);// добавляем таблицу в менеджер
+        dbManager.tables.addToTheEndUni(tempTable); // добавляем таблицу в менеджер
     }
 }
 
 void createDirectoriesAndFiles(const DatabaseManager& dbManager) {
-    if (!fs::exists(dbManager.schemaName)) {
-        fs::create_directory(dbManager.schemaName);
+    if (!fs::exists(dbManager.schemaName)) { // если директории нет, то мы ее создадаем
+        fs::create_directory(dbManager.schemaName); 
     }
     
     UniversalNode* current = dbManager.tables.head;
@@ -49,13 +47,13 @@ void createDirectoriesAndFiles(const DatabaseManager& dbManager) {
         if (!fs::exists(tableDir)) {
             fs::create_directory(tableDir);
         }
-        createCSVFile(tableDir, current->data, dbManager.tuplesLimit);
+        createCSVFile(tableDir, current->data, dbManager.tuplesLimit); // создаем CSV файлы
 
-        createPrimaryKeyFile(tableDir, current->data.tableName);
+        createPrimaryKeyFile(tableDir, current->data.tableName); // создадим файл с ключом (1)
 
-        createLockFile(tableDir, current->data.tableName);
+        createLockFile(tableDir, current->data.tableName); // создадим файл состояния
         
-        current = current->next;
+        current = current->next; // и так сделаем для каждого значения таблицы
     }
 }
 
@@ -63,7 +61,7 @@ void createCSVFile(const std::string& tableDir, DBtable& table, int tuplesLimit)
     int fileIndex = 1;
     fs::path csvPath = fs::path(tableDir) / (table.tableName + "_" + std::to_string(fileIndex) + ".csv");
     
-    std::ofstream csvFile(csvPath);// Создание начального CSV файла
+    std::ofstream csvFile(csvPath);
     if (!csvFile.is_open()) {
         std::cerr << "Error while making CSV file in " << fs::absolute(csvPath) << std::endl;
         return;

@@ -44,18 +44,6 @@ void HashTable::push(const std::string& key, std::string data) {
     }
 }
 
-HashTableItem* HashTable::get(const std::string& key) const {
-    //int index = HashFun(key);
-    // HashTableItem* current = items[index];
-    // while (current != nullptr) {
-    //     if (current->key == key) {
-    //         return current; // Возвращаем элемент, если ключ найден
-    //     }
-    //     current = current->next; // Переходим к следующему элементу
-    // }
-    return nullptr; // Если ключ не найден, возвращаем nullptr
-}
-
 void HashTable::pop(const std::string& key) { // Функция удаления
 
     if (count == 0) { // Если таблица пустая, ничего не делаем

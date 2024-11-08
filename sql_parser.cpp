@@ -10,11 +10,6 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-bool columnExists(const LinkedList& columnsFromQuery, const std::string& columnName) { // нужно сделать
-    
-    return false; // Колонка не найдена
-}
-
 bool tableExists(const DatabaseManager& dbManager, const std::string& tableName) {
     UniversalNode* current = dbManager.tables.head;
     while (current != nullptr) { // пройдемся по списку таблиц
@@ -38,21 +33,19 @@ void splitPoint(LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, std::
     }
 }
 
-// Функция для удаления пробелов и запятой в конце строки
 string cleanColumnName(const string& str) {
     string cleaned = str;
     if (!cleaned.empty() && cleaned.back() == ',') {
-        cleaned.pop_back();  // Убираем последнюю запятую
+        cleaned.pop_back(); // убираем последнюю запятую
     }
-    // Убираем ведущие и завершающие пробелы
-    size_t start = cleaned.find_first_not_of(" \t");
-    size_t end = cleaned.find_last_not_of(" \t");
+    // убираем пробелы
+    int start = cleaned.find_first_not_of(" \t");
+    int end = cleaned.find_last_not_of(" \t");
     if (start == string::npos || end == string::npos) {
-        return "";  // Если пробелы только, возвращаем пустую строку
+        return ""; // если только пробелы, вернем пустую строку
     }
     return cleaned.substr(start, end - start + 1);
 }
-
 
 int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName) {
     int amount = 0; // ищем количество созданных csv файлов
@@ -98,7 +91,6 @@ void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable, const Databa
                     // } else {
                     //     cerr << "Column index out of bounds for first table" << endl;
                     // }
-
                     // if (indexSecondColumn < document2.GetColumnCount()) {
                     //     cout << document2.GetCell<string>(indexSecondColumn, p) << endl;
                     // } else {
@@ -120,7 +112,7 @@ bool isLocked(const DatabaseManager& dbManager, const std::string& tableName){
     ifstream file(fileName);
     if (!file.is_open()) {
         cerr << "Error while reading lock file" << endl;
-        return true; // костыль, но так как прочитать файл не смогли, вернем, что таблица заблокирована к редактированию
+        return true; // так как прочитать файл не смогли, вернем, что таблица заблокирована к редактированию
     }
     string current; // чтение текущего значения блокировки
     file >> current;

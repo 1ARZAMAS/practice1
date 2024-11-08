@@ -52,7 +52,6 @@ struct HashTable {
     int HashFun(const std::string& key);
     HashTableItem* createItem(const std::string& key, std::string data);
     void push(const std::string& key, std::string data);
-    HashTableItem* get(const std::string& key) const;
     void pop(const std::string& key);
 };
 
