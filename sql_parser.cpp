@@ -189,7 +189,7 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
         string firstTable = dbManager.schemaName + "/" + tableName + "/" + tableName + "_1.csv";
         copyFirstRow(firstTable, tableDir); // так как мы их считываем, чтобы корректно вставлять данные
     }
-//, ios::app
+    
     fstream csv(tableDir); // ios::app чтобы добавлять в конец документа
     if (!csv.is_open()) { 
         cerr << "Error while opening the file" << endl;
@@ -225,7 +225,6 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
     string tempString;
     csv >> tempString;
     int tempCounter = 1;
-    cout << tempString << endl;
     for(int i = 0; i < tempString.size(); i++){
         if (tempString[i] == ','){
             tempCounter++;
@@ -269,8 +268,49 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
     newKeyFile.close();
 }
 
-void deleteFunc(const DatabaseManager& dbManager, const std::string& tableName, string& query){
+void deleteFunc(const DatabaseManager& dbManager, const std::string& tableName, string& query, LinkedList& tableFromQuery, LinkedList& columnFromQuery){
+    bool insideQuotes = false;
+    string currentValue;
+    LinkedList dataList; // тут будут находится все значения, которые захотим удалить
+    for (int i = 0; i < query.size(); i++) {
+        char ch = query[i];
+        // если встречаем одиночную кавычку, то меняем флаг
+        if (ch == '\'') {
+            insideQuotes = !insideQuotes;
+            if (!insideQuotes && !currentValue.empty()) {
+                // если закрыли кавычки, сохраняем значение в dataList
+                dataList.addToTheEnd(currentValue);
+                currentValue.clear();
+            }
+        } else if (insideQuotes) {
+            // если внутри кавычек, собираем значение дальше
+            currentValue += ch;
+        }
+    }
 
+    bool valueExists = false;
+    Node* currentData = dataList.head; // пройдемся по всем значениям
+    for(int i = 0; i < amountOfCSV(dbManager, tableName); i++){
+        string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(i + 1) + ".csv";
+        rapidcsv::Document doc(tableDir); // считываем содержимое файла
+        int amountOfRows = doc.GetRowCount();
+        while(currentData != nullptr){
+            for (int j = 0; j < amountOfRows; j++){    
+                // GetCell(колонка, строка)
+                if (doc.GetCell<string>(columnFromQuery.head->data, j) == currentData->data){
+                    valueExists = true;
+                    doc.RemoveRow(j);
+                    doc.Save(tableDir);
+                    j--;
+                    amountOfRows--;
+                }
+            }
+            currentData = currentData->next;
+        }
+    }
+    if (!valueExists){
+        cerr << "Value does not exist" << endl;
+    }
 }
 
 void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
@@ -306,6 +346,7 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
             try {
                 // DELETE FROM таблица1 WHERE таблица1.колонка1 = '123'
                 // обрабатываем запрос
+                 
                 iss >> wordFromQuery;
                 if (wordFromQuery != "FROM") {
                     throw std::runtime_error("Incorrect command");
@@ -315,21 +356,34 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
                 if (!tableExists(dbManager, tableName)) {
                     throw std::runtime_error("Table does not exist");
                 }
+                if (isLocked(dbManager, tableName)){
+                    throw std::runtime_error("Table is locked");
+                }
+
                 iss >> wordFromQuery;
                 if (wordFromQuery != "WHERE") {
                     throw std::runtime_error("Incorrect command");
                 }
-
-                if (isLocked(dbManager, tableName)){
-                    throw std::runtime_error("Table is locked");
+                iss >> wordFromQuery; // table1.column1 
+                LinkedList tableFromQuery;
+                LinkedList columnFromQuery;
+                splitPoint(tableFromQuery, columnFromQuery, wordFromQuery);
+                if (tableFromQuery.head->data != tableName){
+                    throw runtime_error("Incorrect table in query");
                 }
+
+                iss >> wordFromQuery; // =
+                if (wordFromQuery != "=") {
+                    throw std::runtime_error("Incorrect command");
+                }
+
                 locking(dbManager, tableName); // тут блокируем доступ к таблице
 
                 string query;
                 string valuesPart;
                 getline(iss, valuesPart); // считываем оставшуюся часть строки (вдруг захотим удалять не по одному значению)
                 query += valuesPart;
-                deleteFunc(dbManager, tableName, query); // тут функция удаления
+                deleteFunc(dbManager, tableName, query, tableFromQuery, columnFromQuery); // тут функция удаления
 
                 unlocking(dbManager, tableName); // а тут разблокируем после произведения удаления
 
