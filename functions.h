@@ -10,3 +10,5 @@ std::string cleanString(const std::string& str);
 int amountOfCSV(const DatabaseManager& dbManager, const std::string& tableName);
 
 void copyFirstRow(std::string& firstTable, std::string& tableDir);
+
+bool findDot(std::string str);

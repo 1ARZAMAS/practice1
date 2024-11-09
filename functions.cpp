@@ -38,6 +38,14 @@ string cleanString(const string& str) {
     return cleaned.substr(start, end - start + 1);
 }
 
+bool findDot(string str){
+    if (str.find('.')){
+        return true;
+    } else {
+        return false;
+    }
+}
+
 int amountOfCSV(const DatabaseManager& dbManager, const string& tableName) {
     int amount = 0; // ищем количество созданных csv файлов
     string tableDir;
