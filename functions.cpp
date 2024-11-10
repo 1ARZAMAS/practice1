@@ -39,7 +39,7 @@ string cleanString(const string& str) {
 }
 
 bool findDot(string str){
-    if (str.find('.')){
+    if (str.find('.') != -1){
         return true;
     } else {
         return false;
