@@ -29,6 +29,11 @@ string cleanString(const string& str) {
     if (!cleaned.empty() && cleaned.back() == ',') {
         cleaned.pop_back(); // убираем последнюю запятую
     }
+    
+    if (!cleaned.empty() && (cleaned.front() == '\'' || cleaned.front() == '\"') &&
+        (cleaned.back() == '\'' || cleaned.back() == '\"')) {
+        cleaned = cleaned.substr(1, cleaned.size() - 2);  // Убираем первую и последнюю кавычку
+    }
     // убираем пробелы
     int start = cleaned.find_first_not_of(" \t");
     int end = cleaned.find_last_not_of(" \t");
