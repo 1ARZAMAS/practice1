@@ -6,101 +6,108 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-void crossJoin(int& fileCountFirstTable, int& fileCountSecondTable, const DatabaseManager& dbManager, const std::string& tableName, LinkedList& columnsFromQuery){
-    for (int i = 0; i < fileCountFirstTable; i++){ // пройдемся по всем файлам первой таблицы
-        DBtable& firstTable = reinterpret_cast<DBtable&>(dbManager.tables.head->data); // приводим к типу DBtable
-        string currentTable1 = firstTable.tableName; // получаем имя таблицы
+string getColumnValue(int& fileCountFirstTable, int& fileCountSecondTable, LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, const string& columnName, int rowIndex1, int rowIndex2, const DatabaseManager& dbManager) {
+    int pos_dot = columnName.find("."); // разделяем columnName таблицу и столбец "table1.column1" ->
+    string tableName = columnName.substr(0, pos_dot); // table1
+    string column = columnName.substr(pos_dot + 1); // column1
 
-        string tableDir1 = dbManager.schemaName + "/" + currentTable1 + "/" + currentTable1 + "_" + std::to_string(i + 1) + ".csv";
-        string column1 = cleanString(columnsFromQuery.head->next->data);
-        
-        rapidcsv::Document document1(tableDir1); // открываем файл 1
-        int indexFirstColumn = document1.GetColumnIdx(column1); // считываем индекс искомой колонки 1
-        int amountRow1 = document1.GetRowCount(); // считываем количество строк в файле 1
-        for (int j = 0; j < amountRow1; j++){ // проходимся по всем строкам
-            for (int k = 0; k < fileCountSecondTable; k++){ // пройдемся по второй таблице
-                DBtable& secondTable = reinterpret_cast<DBtable&>(dbManager.tables.head->next->data); // приводим к типу DBtable
-                string currentTable2 = secondTable.tableName; // получаем имя таблицы
-                
-                string tableDir2 = dbManager.schemaName + "/" + currentTable2 + "/" + currentTable2 + "_" + std::to_string(k + 1) + ".csv";
-                string column2 = cleanString(columnsFromQuery.head->data);
-                rapidcsv::Document document2(tableDir2); // открываем файл 2
-
-                int indexSecondColumn = document2.GetColumnIdx(column2); // считываем индекс искомой колонки 2
-                int amountRow2 = document2.GetRowCount(); // считываем количество строк в файле 2
-                for (int p = 0; p < amountRow2; ++p) {
-                    cout << document1.GetCell<string>(0, j) << ": ";
-                    cout << document1.GetCell<string>(indexFirstColumn, j) << "  |   ";
-                    cout << document2.GetCell<string>(0, p) << ": ";
-                    cout << document2.GetCell<string>(indexSecondColumn, p) << endl;
-                }
-            }
+    int columnIdx;
+    for (int i = 0; i < amountOfCSV(dbManager, tableName); i++) { // пройдемся по всем файлам таблицы
+        string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(i + 1) + ".csv";
+        rapidcsv::Document doc(tableDir);// открываем CSV-файл с помощью rapidcsv
+        columnIdx = doc.GetColumnIdx(column); // получаем индекс колонки
+        if (columnIdx == -1) {
+            cout << "Column wasn't found: " << column << endl;
+            return "";
         }
+        string cellValue;
+        if (tableName == tablesFromQuery.tail->data) { // если первая таблица, то использует j для обхода (в цикле определено)
+            cellValue = doc.GetCell<string>(columnIdx, rowIndex1);
+            
+        } else if (tableName == tablesFromQuery.head->data) { // если вторая таблица, то использует p для обхода (в цикле определено)
+            cellValue = doc.GetCell<string>(columnIdx, rowIndex2);
+        }
+        return cellValue;
     }
+    return "";
 }
 
-bool recursionFunc(string query){
-    int pos_or = query.find("OR"); // ищем первое вхождение OR
+bool recursionFunc(int& fileCountFirstTable, int& fileCountSecondTable, const string& query, LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, int rowIndex1, int rowIndex2, const DatabaseManager& dbManager){
+    string cleanedQuery = cleanString(query);
+    int pos_or = cleanedQuery.find("OR"); // ищем первое вхождение OR
     if (pos_or != string::npos) {
-        string leftPart = query.substr(0, pos_or);  // отсекаем левую часть до OR
-        string rightPart = query.substr(pos_or + 2);  // отсекаем левую часть после OR
-        bool leftResult = recursionFunc(cleanString(leftPart));
-        bool rightResult = recursionFunc(cleanString(rightPart));
-
-        return leftResult || rightResult;  // если хотя бы одно истинно, вернем true
+        string leftPart = cleanedQuery.substr(0, pos_or);  // отсекаем левую часть до OR
+        string rightPart = cleanedQuery.substr(pos_or + 2);  // отсекаем правую часть после OR
+        bool leftResult = recursionFunc(fileCountFirstTable, fileCountSecondTable, leftPart, tablesFromQuery, columnsFromQuery, rowIndex1, rowIndex2, dbManager);
+        bool rightResult = recursionFunc(fileCountFirstTable, fileCountSecondTable, rightPart, tablesFromQuery, columnsFromQuery, rowIndex1, rowIndex2, dbManager);
+       
+        return leftResult || rightResult;  // если хотя бы одно истинно, возвращаем true
     }
-    int pos_and = query.find("AND"); // ищем первое вхождение AND
+    int pos_and = cleanedQuery.find("AND"); // ищем первое вхождение AND
     if (pos_and != string::npos) {
-        string leftPart = query.substr(0, pos_and);  // отсекаем левую часть до AND
-        string rightPart = query.substr(pos_and + 3);  // отсекаем левую часть после AND
-        bool leftResult = recursionFunc(cleanString(leftPart));
-        bool rightResult = recursionFunc(cleanString(rightPart));
-
-        return leftResult && rightResult;  // если оба истинно, вернем true
+        string leftPart = cleanedQuery.substr(0, pos_and);  // отсекаем левую часть до AND
+        string rightPart = cleanedQuery.substr(pos_and + 3);  // отсекаем правую часть после AND
+        bool leftResult = recursionFunc(fileCountFirstTable, fileCountSecondTable, leftPart, tablesFromQuery, columnsFromQuery, rowIndex1, rowIndex2, dbManager);
+        bool rightResult = recursionFunc(fileCountFirstTable, fileCountSecondTable, rightPart, tablesFromQuery, columnsFromQuery, rowIndex1, rowIndex2, dbManager);
+        
+        return leftResult && rightResult;  // если оба истинно, возвращаем true
     }
-    int pos_equal = query.find('=');
+    int pos_equal = cleanedQuery.find('=');
     if (pos_equal != string::npos){
-        string leftPart = cleanString(query.substr(0, pos_equal));  // левая часть до =
-        string rightPart = cleanString(query.substr(pos_equal + 1));  // правая часть после =
+        string left = cleanString(cleanedQuery.substr(0, pos_equal));  // левая часть, например, table1.column1
+        string right = cleanString(cleanedQuery.substr(pos_equal + 1));  // правая часть, например, 'value'
+        
+        string leftValue;
+        string rightValue;
 
+        if (!findDot(left)){ // если не нашли точку в выражении, значит, это просто строка для сравнения
+            leftValue = cleanString(left); // почистим строку от лишних символов
+        } else {
+            leftValue = getColumnValue(fileCountFirstTable, fileCountSecondTable,tablesFromQuery, columnsFromQuery, left, rowIndex1, rowIndex2, dbManager);
+        }
+
+        if (!findDot(right)){ // если не нашли точку в выражении, значит, это просто строка для сравнения
+            rightValue = cleanString(right); // почистим строку от лишних символов
+        } else {
+            rightValue = getColumnValue(fileCountFirstTable, fileCountSecondTable,tablesFromQuery, columnsFromQuery, right, rowIndex1, rowIndex2, dbManager);
+        }
+        return cleanString(leftValue) == cleanString(rightValue);
+        
     }
-    return false; // если нет =, значит, условия точного нет и ничего выводить не будем
+    return false; // Если нет =, значит, условий нет
 }
 
-// SELECT table1.column1, table2.column1 FROM table1, table2 WHERE table1.column1 = table2.column2 AND table1.column2 = 'string'
-// tablesFromQuery table1 table2
-// columnsFromQuery column1 column1
-void selectWithWhere(int& fileCountFirstTable, int& fileCountSecondTable, const DatabaseManager& dbManager, const std::string& query, LinkedList& tablesFromQuery, LinkedList& columnsFromQuery) {
-    // if (!findDot(/**/)){ // Если не нашли точку в выражении, значит, что это просто строка, с которой будем сравнивать значение
-    //     cleanString(/**/); // а для этого почистим строку от лишних символов
-    // }
+// < INSERT INTO table1 VALUES ('somedata', '123')
+// < INSERT INTO table1 VALUES ('somedata1', '123')
+// < INSERT INTO table2 VALUES ('somedthing', 'somedata')
+// < INSERT INTO table2 VALUES ('somasd', 'soasd')
+// < SELECT table1.column1, table2.column1 FROM table1, table2 WHERE table1.column1 = table2.column2 AND table1.column2 = '123'
 
-    for (int i = 0; i < fileCountFirstTable; i++){ // пройдемся по всем файлам первой таблицы
+void selectWithWhere(int& fileCountFirstTable, int& fileCountSecondTable, const DatabaseManager& dbManager, const std::string& query, LinkedList& tablesFromQuery, LinkedList& columnsFromQuery) {
+    for (int i = 0; i < fileCountFirstTable; i++) { // Пройдемся по всем файлам первой таблицы
         DBtable& firstTable = reinterpret_cast<DBtable&>(dbManager.tables.head->data); // приводим к типу DBtable
         string currentTable1 = firstTable.tableName; // получаем имя таблицы
         string tableDir1 = dbManager.schemaName + "/" + currentTable1 + "/" + currentTable1 + "_" + std::to_string(i + 1) + ".csv";
-        //string column1 = cleanString(columnsFromQuery.head->next->data);
         rapidcsv::Document document1(tableDir1); // открываем файл 1
-        //int indexFirstColumn = document1.GetColumnIdx(column1); // считываем индекс искомой колонки 1
         for (int j = 0; j < document1.GetRowCount(); j++) {
-            for (int k = 0; k < fileCountSecondTable; k++){ // пройдемся по второй таблице
+            for (int k = 0; k < fileCountSecondTable; k++) { // Проходимся по второй таблице
                 DBtable& secondTable = reinterpret_cast<DBtable&>(dbManager.tables.head->next->data); // приводим к типу DBtable
                 string currentTable2 = secondTable.tableName; // получаем имя таблицы
                 string tableDir2 = dbManager.schemaName + "/" + currentTable2 + "/" + currentTable2 + "_" + std::to_string(k + 1) + ".csv";
-                //string column2 = cleanString(columnsFromQuery.head->data);
                 rapidcsv::Document document2(tableDir2); // открываем файл 2
-                //int indexSecondColumn = document2.GetColumnIdx(column2); // считываем индекс искомой колонки 2
-                
-                for (int p = 0; p < document2.GetRowCount(); ++p) {
-                    // Применение условий фильтрации
-                    if (recursionFunc(query, tablesFromQuery, columnsFromQuery)) {
-                        // Если условие выполнено, выводим соответствующие данные
-                        for (int p = 0; p < document2.GetRowCount(); ++p) {
-                            // cout << document1.GetCell<string>(0, j) << ": ";
-                            // cout << document1.GetCell<string>(indexFirstColumn, j) << "  |   ";
-                            // cout << document2.GetCell<string>(0, p) << ": ";
-                            // cout << document2.GetCell<string>(indexSecondColumn, p) << endl;
+                for (int p = 0; p < document2.GetRowCount(); p++) {
+                    if (recursionFunc(fileCountFirstTable, fileCountSecondTable, query, tablesFromQuery, columnsFromQuery, j, p, dbManager)) {
+                        //столбец, строка
+                        for (int col = 0; col < document1.GetColumnCount(); col++) {
+                            cout << document1.GetCell<string>(col, j) << " ";
                         }
+                        cout << "| ";
+
+                        // И всю строку из второй таблицы
+                        for (int col = 0; col < document2.GetColumnCount(); col++) {
+                            cout << document2.GetCell<string>(col, p) << "  ";
+                        }
+                        cout << endl;
                     }
                 }
             }
@@ -179,7 +186,8 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
                     string valuesPart;
                     getline(iss, valuesPart); // считываем оставшуюся часть строки
                     query += valuesPart; // table1.column1 = table2.column2 AND table1.column2 = '123'
-                    selectWithWhere(fileCountFirstTable, fileCountSecondTable, dbManager, query);
+    
+                    selectWithWhere(fileCountFirstTable, fileCountSecondTable, dbManager, query, tablesFromQuery, columnsFromQuery);
                 } else {
                     crossJoin(fileCountFirstTable, fileCountSecondTable, dbManager, tablesFromQuery.head->data, columnsFromQuery);
                 }
