@@ -50,16 +50,16 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
         }
     }
 
-    Node* current = dataList.head;
-    int counter = 1; // начнем с 1, потому что первая колонка - это ключ
-    while (current != nullptr){
+    Node* current = dataList.head; 
+    int counter = 1; // Все значения, которые захотим записать
+    while (current != nullptr){// начнем с 1, потому что первая колонка - это ключ
         counter++;
         current = current->next;
     }
     
     string tempString;
     csv >> tempString;
-    int tempCounter = 1;
+    int tempCounter = 1; // количество колонок
     for(int i = 0; i < tempString.size(); i++){
         if (tempString[i] == ','){
             tempCounter++;
@@ -79,16 +79,35 @@ void insertFunc(const DatabaseManager& dbManager, const std::string& tableName, 
     }
 
     csv1 << currentKey << ","; // пишем первичный ключ
-
-    Node* currentData = dataList.head; // пройдемся по всем значениям
-    while(currentData != nullptr){ // и запишем их
-        csv1 << currentData->data;
-        if (currentData->next != nullptr){ // если ссылка не на nullptr, 
-            csv1 << ","; // значит, не конец списка, ставим запятую
-        } else {
-            csv1 << "\n"; // в противном случае просто перейдем на новую строку
+    if (tempCounter == counter){
+        Node* currentData = dataList.head; // пройдемся по всем значениям
+        while(currentData != nullptr){ // и запишем их
+            csv1 << currentData->data;
+            if (currentData->next != nullptr){ // если ссылка не на nullptr, 
+                csv1 << ","; // значит, не конец списка, ставим запятую
+            } else {
+                csv1 << "\n"; // в противном случае просто перейдем на новую строку
+            }
+            currentData = currentData->next;
         }
-        currentData = currentData->next;
+    }
+    
+    if (tempCounter > counter){ // если количество записываемых значений меньше, чем колонок, то будем записывать NULL
+        Node* currentData = dataList.head; // пройдемся по всем значениям
+        while(currentData != nullptr){ // и запишем их
+            csv1 << currentData->data;
+            csv1 << ","; // значит, не конец списка, ставим запятую
+            currentData = currentData->next;
+        }
+        int diff = tempCounter - counter;
+        for(; tempCounter > counter; counter++){
+            csv1 << "NULL";
+            if (tempCounter > counter + 1){
+                csv1 << ",";
+            } else {
+                csv1 << "\n";
+            }
+        }
     }
 
     csv1.close();
