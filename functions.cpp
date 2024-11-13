@@ -84,3 +84,74 @@ void copyFirstRow(string& firstTable, string& tableDir){
     secondFile << firstRow << endl;
     secondFile.close();
 }
+
+string getColumnValue(int& fileCountFirstTable, int& fileCountSecondTable, LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, const string& columnName, int rowIndex1, int rowIndex2, const DatabaseManager& dbManager) {
+    int pos_dot = columnName.find("."); // разделяем columnName таблицу и столбец "table1.column1" ->
+    string tableName = columnName.substr(0, pos_dot); // table1
+    string column = columnName.substr(pos_dot + 1); // column1
+
+    int columnIdx;
+    for (int i = 0; i < amountOfCSV(dbManager, tableName); i++) { // пройдемся по всем файлам таблицы
+        string tableDir = dbManager.schemaName + "/" + tableName + "/" + tableName + "_" + std::to_string(i + 1) + ".csv";
+        rapidcsv::Document doc(tableDir);// открываем CSV-файл с помощью rapidcsv
+        columnIdx = doc.GetColumnIdx(column); // получаем индекс колонки
+        if (columnIdx == -1) {
+            cout << "Column wasn't found: " << column << endl;
+            return "";
+        }
+        string cellValue;
+        if (tableName == tablesFromQuery.tail->data) { // если первая таблица, то использует j для обхода (в цикле определено)
+            cellValue = doc.GetCell<string>(columnIdx, rowIndex1);
+            
+        } else if (tableName == tablesFromQuery.head->data) { // если вторая таблица, то использует p для обхода (в цикле определено)
+            cellValue = doc.GetCell<string>(columnIdx, rowIndex2);
+        }
+        return cellValue;
+    }
+    return "";
+}
+
+bool recursionFunc(int& fileCountFirstTable, int& fileCountSecondTable, const string& query, LinkedList& tablesFromQuery, LinkedList& columnsFromQuery, int rowIndex1, int rowIndex2, const DatabaseManager& dbManager){
+    string cleanedQuery = cleanString(query);
+    int pos_or = cleanedQuery.find("OR"); // ищем первое вхождение OR
+    if (pos_or != string::npos) {
+        string leftPart = cleanedQuery.substr(0, pos_or);  // отсекаем левую часть до OR
+        string rightPart = cleanedQuery.substr(pos_or + 2);  // отсекаем правую часть после OR
+        bool leftResult = recursionFunc(fileCountFirstTable, fileCountSecondTable, leftPart, tablesFromQuery, columnsFromQuery, rowIndex1, rowIndex2, dbManager);
+        bool rightResult = recursionFunc(fileCountFirstTable, fileCountSecondTable, rightPart, tablesFromQuery, columnsFromQuery, rowIndex1, rowIndex2, dbManager);
+       
+        return leftResult || rightResult;  // если хотя бы одно истинно, возвращаем true
+    }
+    int pos_and = cleanedQuery.find("AND"); // ищем первое вхождение AND
+    if (pos_and != string::npos) {
+        string leftPart = cleanedQuery.substr(0, pos_and);  // отсекаем левую часть до AND
+        string rightPart = cleanedQuery.substr(pos_and + 3);  // отсекаем правую часть после AND
+        bool leftResult = recursionFunc(fileCountFirstTable, fileCountSecondTable, leftPart, tablesFromQuery, columnsFromQuery, rowIndex1, rowIndex2, dbManager);
+        bool rightResult = recursionFunc(fileCountFirstTable, fileCountSecondTable, rightPart, tablesFromQuery, columnsFromQuery, rowIndex1, rowIndex2, dbManager);
+        
+        return leftResult && rightResult;  // если оба истинно, возвращаем true
+    }
+    int pos_equal = cleanedQuery.find('=');
+    if (pos_equal != string::npos){
+        string left = cleanString(cleanedQuery.substr(0, pos_equal));  // левая часть, например, table1.column1
+        string right = cleanString(cleanedQuery.substr(pos_equal + 1));  // правая часть, например, 'value'
+        
+        string leftValue;
+        string rightValue;
+
+        if (!findDot(left)){ // если не нашли точку в выражении, значит, это просто строка для сравнения
+            leftValue = cleanString(left); // почистим строку от лишних символов
+        } else {
+            leftValue = getColumnValue(fileCountFirstTable, fileCountSecondTable,tablesFromQuery, columnsFromQuery, left, rowIndex1, rowIndex2, dbManager);
+        }
+
+        if (!findDot(right)){ // если не нашли точку в выражении, значит, это просто строка для сравнения
+            rightValue = cleanString(right); // почистим строку от лишних символов
+        } else {
+            rightValue = getColumnValue(fileCountFirstTable, fileCountSecondTable,tablesFromQuery, columnsFromQuery, right, rowIndex1, rowIndex2, dbManager);
+        }
+        return cleanString(leftValue) == cleanString(rightValue);
+        
+    }
+    return false; // Если нет =, значит, условий нет
+}
