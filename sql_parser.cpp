@@ -17,7 +17,7 @@ void QueryManager(const DatabaseManager& dbManager, DBtable& table) {
          
         if (wordFromQuery == "exit"){
             return;
-        } else if (wordFromQuery == "SELECT"){ // требует дальнейшей реализации
+        } else if (wordFromQuery == "SELECT"){
             try {
                 LinkedList tablesFromQuery;
                 LinkedList columnsFromQuery;
